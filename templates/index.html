@@ -11,24 +11,13 @@
     <h1>OT Calculator (UAT)</h1>
 
     <section>
-      <h2>OT Entries</h2>
-      <button id="add-ot" type="button">Add OT Entry</button>
+      <h2>Entries (OT + Break)</h2>
+      <button id="add-entry" type="button">Add Entry</button>
       <table>
         <thead>
-          <tr><th>Employee</th><th>Date</th><th>Start</th><th>End</th><th>Action</th></tr>
+          <tr><th>Type</th><th>Employee</th><th>Date</th><th>Start (24h)</th><th>End (24h)</th><th>Action</th></tr>
         </thead>
-        <tbody id="ot-body"></tbody>
-      </table>
-    </section>
-
-    <section>
-      <h2>Break Entries</h2>
-      <button id="add-break" type="button">Add Break Entry</button>
-      <table>
-        <thead>
-          <tr><th>Employee</th><th>Date</th><th>Start</th><th>End</th><th>Action</th></tr>
-        </thead>
-        <tbody id="break-body"></tbody>
+        <tbody id="entry-body"></tbody>
       </table>
     </section>
 

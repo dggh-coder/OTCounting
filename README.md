@@ -10,11 +10,17 @@ go run ./cmd/server
 
 Open http://localhost:8080.
 
+## Input rules
+
+- Use 24-hour times (`HH:MM`), e.g. `20:30`.
+- Date accepts `YYYY-MM-DD` and `MM/DD/YYYY`.
+- UI uses one combined entry table with a Type selector (`OT` or `Break`).
+
 ## Architecture
 
 - `internal/web`: HTML template rendering.
 - `internal/api`: JSON API handler (`POST /api/calculate`).
-- `internal/service`: input validation and orchestration.
+- `internal/service`: input validation/normalization and orchestration.
 - `internal/engine`: all OT/business rules.
 - `static/app.js`: localStorage + API calls + rendering only (no OT math).
 

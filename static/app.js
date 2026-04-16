@@ -1,17 +1,17 @@
-const STORAGE_KEY = "ot-calculator-payload-v1";
+const STORAGE_KEY = "ot-calculator-payload-v2";
 
 const state = {
-  otEntries: [],
-  breakEntries: []
+  entries: []
 };
 
 function uid(prefix) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function defaultRow(prefix) {
+function defaultRow() {
   return {
-    id: uid(prefix),
+    id: uid("row"),
+    kind: "OT",
     employeeId: "A",
     date: "",
     startTime: "",
@@ -23,17 +23,34 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
+function normalizeLegacy(parsed) {
+  if (Array.isArray(parsed.entries)) {
+    return parsed.entries;
+  }
+
+  const rows = [];
+  if (Array.isArray(parsed.otEntries)) {
+    parsed.otEntries.forEach((e) => rows.push({ ...e, kind: "OT" }));
+  }
+  if (Array.isArray(parsed.breakEntries)) {
+    parsed.breakEntries.forEach((e) => rows.push({ ...e, kind: "BREAK" }));
+  }
+  return rows;
+}
+
 function loadState() {
-  const raw = localStorage.getItem(STORAGE_KEY);
+  const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("ot-calculator-payload-v1");
   if (!raw) return;
   try {
     const parsed = JSON.parse(raw);
-    state.otEntries = Array.isArray(parsed.otEntries) ? parsed.otEntries : [];
-    state.breakEntries = Array.isArray(parsed.breakEntries) ? parsed.breakEntries : [];
+    state.entries = normalizeLegacy(parsed);
   } catch {
-    state.otEntries = [];
-    state.breakEntries = [];
+    state.entries = [];
   }
+}
+
+function kindSelect(value) {
+  return `<select data-field="kind"><option value="OT" ${value === "OT" ? "selected" : ""}>OT</option><option value="BREAK" ${value === "BREAK" ? "selected" : ""}>Break</option></select>`;
 }
 
 function employeeSelect(value) {
@@ -42,15 +59,16 @@ function employeeSelect(value) {
 
 function rowHtml(row) {
   return `
+    <td>${kindSelect(row.kind)}</td>
     <td>${employeeSelect(row.employeeId)}</td>
-    <td><input data-field="date" type="date" value="${row.date || ""}"></td>
-    <td><input data-field="startTime" type="time" value="${row.startTime || ""}"></td>
-    <td><input data-field="endTime" type="time" value="${row.endTime || ""}"></td>
+    <td><input data-field="date" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" value="${row.date || ""}"></td>
+    <td><input data-field="startTime" type="text" inputmode="numeric" placeholder="HH:MM" value="${row.startTime || ""}"></td>
+    <td><input data-field="endTime" type="text" inputmode="numeric" placeholder="HH:MM" value="${row.endTime || ""}"></td>
     <td><button type="button" data-action="delete">Delete</button></td>
   `;
 }
 
-function bindRows(tbodyEl, rows, key) {
+function bindRows(tbodyEl, rows) {
   tbodyEl.innerHTML = "";
   rows.forEach((row, index) => {
     const tr = document.createElement("tr");
@@ -59,14 +77,14 @@ function bindRows(tbodyEl, rows, key) {
     tr.querySelectorAll("[data-field]").forEach((el) => {
       el.addEventListener("change", async (e) => {
         const field = e.target.dataset.field;
-        state[key][index][field] = e.target.value;
+        state.entries[index][field] = e.target.value.trim();
         saveState();
         await recalculate();
       });
     });
 
     tr.querySelector('[data-action="delete"]').addEventListener("click", async () => {
-      state[key].splice(index, 1);
+      state.entries.splice(index, 1);
       render();
       saveState();
       await recalculate();
@@ -77,8 +95,33 @@ function bindRows(tbodyEl, rows, key) {
 }
 
 function render() {
-  bindRows(document.getElementById("ot-body"), state.otEntries, "otEntries");
-  bindRows(document.getElementById("break-body"), state.breakEntries, "breakEntries");
+  bindRows(document.getElementById("entry-body"), state.entries);
+}
+
+function isComplete(row) {
+  return row.employeeId && row.date && row.startTime && row.endTime;
+}
+
+function toPayload() {
+  const otEntries = [];
+  const breakEntries = [];
+
+  state.entries.filter(isComplete).forEach((row) => {
+    const base = {
+      id: row.id,
+      employeeId: row.employeeId,
+      date: row.date,
+      startTime: row.startTime,
+      endTime: row.endTime
+    };
+    if (row.kind === "BREAK") {
+      breakEntries.push(base);
+    } else {
+      otEntries.push(base);
+    }
+  });
+
+  return { otEntries, breakEntries };
 }
 
 function renderDaily(data) {
@@ -147,7 +190,7 @@ async function recalculate() {
     const resp = await fetch("/api/calculate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(state)
+      body: JSON.stringify(toPayload())
     });
     if (!resp.ok) {
       throw new Error(await resp.text());
@@ -163,18 +206,10 @@ async function recalculate() {
 
 function init() {
   loadState();
-  if (state.otEntries.length === 0) state.otEntries.push(defaultRow("ot"));
-  if (state.breakEntries.length === 0) state.breakEntries.push(defaultRow("br"));
+  if (state.entries.length === 0) state.entries.push(defaultRow());
 
-  document.getElementById("add-ot").addEventListener("click", async () => {
-    state.otEntries.push(defaultRow("ot"));
-    render();
-    saveState();
-    await recalculate();
-  });
-
-  document.getElementById("add-break").addEventListener("click", async () => {
-    state.breakEntries.push(defaultRow("br"));
+  document.getElementById("add-entry").addEventListener("click", async () => {
+    state.entries.push(defaultRow());
     render();
     saveState();
     await recalculate();

@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"ot-uat/internal/engine"
 )
@@ -16,35 +17,70 @@ func NewCalculateService(calculator *engine.Calculator) *CalculateService {
 }
 
 func (s *CalculateService) Calculate(input engine.CalculateInput) (engine.CalculateOutput, error) {
-	if err := validateInput(input); err != nil {
+	normalized, err := normalizeInput(input)
+	if err != nil {
 		return engine.CalculateOutput{}, err
 	}
-	return s.calculator.Calculate(input)
+	return s.calculator.Calculate(normalized)
 }
 
-func validateInput(input engine.CalculateInput) error {
+func normalizeInput(input engine.CalculateInput) (engine.CalculateInput, error) {
+	out := engine.CalculateInput{
+		OTEntries:    make([]engine.OTEntry, 0, len(input.OTEntries)),
+		BreakEntries: make([]engine.BreakEntry, 0, len(input.BreakEntries)),
+	}
+
 	for _, e := range input.OTEntries {
-		if err := validateCommon(e.EmployeeID, e.Date, e.StartTime, e.EndTime); err != nil {
-			return fmt.Errorf("ot entry %s: %w", e.ID, err)
+		date, start, end, err := validateAndNormalizeCommon(e.EmployeeID, e.Date, e.StartTime, e.EndTime)
+		if err != nil {
+			return engine.CalculateInput{}, fmt.Errorf("ot entry %s: %w", e.ID, err)
 		}
+		e.Date, e.StartTime, e.EndTime = date, start, end
+		out.OTEntries = append(out.OTEntries, e)
 	}
 	for _, e := range input.BreakEntries {
-		if err := validateCommon(e.EmployeeID, e.Date, e.StartTime, e.EndTime); err != nil {
-			return fmt.Errorf("break entry %s: %w", e.ID, err)
+		date, start, end, err := validateAndNormalizeCommon(e.EmployeeID, e.Date, e.StartTime, e.EndTime)
+		if err != nil {
+			return engine.CalculateInput{}, fmt.Errorf("break entry %s: %w", e.ID, err)
 		}
+		e.Date, e.StartTime, e.EndTime = date, start, end
+		out.BreakEntries = append(out.BreakEntries, e)
 	}
-	return nil
+	return out, nil
 }
 
-func validateCommon(employeeID engine.EmployeeID, date, start, end string) error {
+func validateAndNormalizeCommon(employeeID engine.EmployeeID, date, start, end string) (string, string, string, error) {
 	if employeeID != engine.EmployeeA && employeeID != engine.EmployeeB {
-		return errors.New("employeeId must be A or B")
+		return "", "", "", errors.New("employeeId must be A or B")
 	}
-	if len(date) != len("2006-01-02") {
-		return errors.New("date must be YYYY-MM-DD")
+	dateNorm, err := parseDate(date)
+	if err != nil {
+		return "", "", "", errors.New("date must be YYYY-MM-DD or MM/DD/YYYY")
 	}
-	if len(start) != len("15:04") || len(end) != len("15:04") {
-		return errors.New("time must be HH:MM")
+	startNorm, err := parse24Hour(start)
+	if err != nil {
+		return "", "", "", errors.New("startTime must be 24-hour HH:MM")
 	}
-	return nil
+	endNorm, err := parse24Hour(end)
+	if err != nil {
+		return "", "", "", errors.New("endTime must be 24-hour HH:MM")
+	}
+	return dateNorm, startNorm, endNorm, nil
+}
+
+func parseDate(raw string) (string, error) {
+	for _, layout := range []string{"2006-01-02", "01/02/2006", "1/2/2006"} {
+		if t, err := time.Parse(layout, raw); err == nil {
+			return t.Format("2006-01-02"), nil
+		}
+	}
+	return "", errors.New("invalid date")
+}
+
+func parse24Hour(raw string) (string, error) {
+	t, err := time.Parse("15:04", raw)
+	if err != nil {
+		return "", err
+	}
+	return t.Format("15:04"), nil
 }
