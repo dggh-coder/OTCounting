@@ -31,12 +31,19 @@ func (c *Calculator) Calculate(input CalculateInput) (CalculateOutput, error) {
 	}
 
 	dailyAcc := map[EmployeeID]map[string]*dayAccumulator{EmployeeA: {}, EmployeeB: {}}
+	seenOT := map[string]struct{}{}
 
 	for _, ot := range input.OTEntries {
 		otRange, err := parseRange(ot.Date, ot.StartTime, ot.EndTime)
 		if err != nil {
 			return CalculateOutput{}, fmt.Errorf("invalid ot entry %s: %w", ot.ID, err)
 		}
+
+		otKey := fmt.Sprintf("%s|%s|%s", ot.EmployeeID, otRange.Start.Format(time.RFC3339), otRange.End.Format(time.RFC3339))
+		if _, exists := seenOT[otKey]; exists {
+			continue
+		}
+		seenOT[otKey] = struct{}{}
 
 		segments := []timeRange{otRange}
 		segments = subtractNonOT(segments)
@@ -86,8 +93,7 @@ func (c *Calculator) Calculate(input CalculateInput) (CalculateOutput, error) {
 		monthAcc := map[string]MonthlySummary{}
 		for _, dateKey := range sortedKeys(dailyAcc[emp]) {
 			acc := dailyAcc[emp][dateKey]
-			rate15Hours := roundMergedMinutesToHours(acc.rate15Minutes)
-			rate20Hours := roundMergedMinutesToHours(acc.rate20Minutes)
+			rate15Hours, rate20Hours := mixedRoundHours(acc.rate15Minutes, acc.rate20Minutes)
 			totalWeighted := float64(rate15Hours)*1.5 + float64(rate20Hours)*2.0
 
 			ds := DailySummary{
@@ -158,4 +164,41 @@ func splitSegmentMinutes(seg timeRange) (int, int) {
 		}
 	}
 	return rate15Mins, rate20Mins
+}
+
+func mixedRoundHours(rate15Minutes, rate20Minutes int) (int, int) {
+	rate15Hours := rate15Minutes / 60
+	rate20Hours := rate20Minutes / 60
+	rate15MM := rate15Minutes % 60
+	rate20MM := rate20Minutes % 60
+	totalMM := rate15MM + rate20MM
+
+	if totalMM < 30 {
+		return rate15Hours, rate20Hours
+	}
+
+	if totalMM < 60 {
+		if rate15MM > rate20MM {
+			rate15Hours++
+		} else {
+			rate20Hours++
+		}
+		return rate15Hours, rate20Hours
+	}
+
+	if rate15MM > rate20MM {
+		rate15Hours++
+		leftover20 := rate20MM - (60 - rate15MM)
+		if leftover20 >= 30 {
+			rate20Hours++
+		}
+		return rate15Hours, rate20Hours
+	}
+
+	rate20Hours++
+	leftover15 := rate15MM - (60 - rate20MM)
+	if leftover15 >= 30 {
+		rate15Hours++
+	}
+	return rate15Hours, rate20Hours
 }

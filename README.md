@@ -15,6 +15,8 @@ Open http://localhost:8080.
 - Use 24-hour times (`HH:MM`), e.g. `20:30`.
 - Date accepts `YYYY-MM-DD` and `MM/DD/YYYY`.
 - UI uses one combined entry table with a Type selector (`OT` or `Break`).
+- Duplicate OT entries with the same employee and exact same start/end datetime are counted once.
+- Daily rounding uses combined 1.5/2.0 minute balancing (per latest UAT rule), not independent rounding per rate bucket.
 
 ## Architecture
 
