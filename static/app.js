@@ -144,13 +144,17 @@ function renderDaily(data) {
 
     dates.forEach((dateKey) => {
       const day = byDate[dateKey];
+      const rate20H = Math.floor(day.rate20Minutes / 60);
+      const rate20M = day.rate20Minutes % 60;
+      const rate15H = Math.floor(day.rate15Minutes / 60);
+      const rate15M = day.rate15Minutes % 60;
       const div = document.createElement("div");
       div.className = "day-card";
       div.innerHTML = `
-        <strong>Day ${day.dateLabel}</strong><br>
-        (${(day.rate20Segments || []).join(" + ") || "-"}) ${day.rate20Minutes} mins -> ${day.rate20RoundedHours} hr x2.0 = ${(day.rate20RoundedHours * 2).toFixed(1)}<br>
-        (${(day.rate15Segments || []).join(" + ") || "-"}) ${day.rate15Minutes} mins -> ${day.rate15RoundedHours} hr x1.5 = ${(day.rate15RoundedHours * 1.5).toFixed(1)}<br>
-        <strong>Total: ${Number(day.totalWeighted).toFixed(1)}</strong>
+        <strong>Day ${day.dateLabel}:</strong><br>
+        2.0x : (${(day.rate20Segments || []).join(" + ") || "-"}) = ${rate20H}hr:${String(rate20M).padStart(2, "0")}min<br>
+        1.5x : (${(day.rate15Segments || []).join(" + ") || "-"}) = ${rate15H}hr:${String(rate15M).padStart(2, "0")}min<br>
+        <strong>Total: ${Number(day.totalWeighted).toFixed(1)}hr</strong>
       `;
       root.appendChild(div);
     });
