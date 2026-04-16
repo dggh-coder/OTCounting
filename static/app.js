@@ -152,8 +152,8 @@ function renderDaily(data) {
       div.className = "day-card";
       div.innerHTML = `
         <strong>Day ${day.dateLabel}:</strong><br>
-        2.0x : (${(day.rate20Segments || []).join(" + ") || "-"}) = ${rate20H}hr:${String(rate20M).padStart(2, "0")}min<br>
-        1.5x : (${(day.rate15Segments || []).join(" + ") || "-"}) = ${rate15H}hr:${String(rate15M).padStart(2, "0")}min<br>
+        2.0x : (${(day.rate20Segments || []).join(" + ") || "-"}) = ${rate20H}hr:${String(rate20M).padStart(2, "0")}min(${Number(day.rate20RoundedHours * 2).toFixed(1)}hr)<br>
+        1.5x : (${(day.rate15Segments || []).join(" + ") || "-"}) = ${rate15H}hr:${String(rate15M).padStart(2, "0")}min (${Number(day.rate15RoundedHours * 1.5).toFixed(1)}hr)<br>
         <strong>Total: ${Number(day.totalWeighted).toFixed(1)}hr</strong>
       `;
       root.appendChild(div);
@@ -183,7 +183,12 @@ function renderMonthly(data) {
       const m = byMonth[monthKey];
       const div = document.createElement("div");
       div.className = "month-card";
-      div.innerHTML = `<strong>${monthKey}</strong> - 1.5x hrs: ${m.rate15RoundedHours}, 2.0x hrs: ${m.rate20RoundedHours}, total weighted: ${Number(m.totalWeighted).toFixed(1)}`;
+      div.innerHTML = `
+        <strong>${monthKey}</strong><br>
+        2.0x : ${m.rate20RoundedHours}hr<br>
+        1.5x : ${m.rate15RoundedHours}hr<br>
+        <strong>Total weighted: ${Number(m.totalWeighted).toFixed(1)}hr</strong>
+      `;
       root.appendChild(div);
     });
   });
