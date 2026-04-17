@@ -11,6 +11,7 @@ type dayAccumulator struct {
 	rate20Minutes int
 	rate15Segs    []string
 	rate20Segs    []string
+	dateLabel     string
 }
 
 func formatDateLabel(date string) string {

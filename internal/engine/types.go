@@ -11,6 +11,7 @@ type OTEntry struct {
 	ID         string     `json:"id"`
 	EmployeeID EmployeeID `json:"employeeId"`
 	Date       string     `json:"date"`
+	Period     string     `json:"period"`
 	StartTime  string     `json:"startTime"`
 	EndTime    string     `json:"endTime"`
 }
@@ -19,6 +20,7 @@ type BreakEntry struct {
 	ID         string     `json:"id"`
 	EmployeeID EmployeeID `json:"employeeId"`
 	Date       string     `json:"date"`
+	Period     string     `json:"period"`
 	StartTime  string     `json:"startTime"`
 	EndTime    string     `json:"endTime"`
 }

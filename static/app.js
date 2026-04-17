@@ -11,9 +11,10 @@ function uid(prefix) {
 function defaultRow() {
   return {
     id: uid("row"),
+    date: "",
+    period: "AM",
     kind: "OT",
     employeeId: "A",
-    date: "",
     startTime: "",
     endTime: ""
   };
@@ -25,15 +26,15 @@ function saveState() {
 
 function normalizeLegacy(parsed) {
   if (Array.isArray(parsed.entries)) {
-    return parsed.entries;
+    return parsed.entries.map((e) => ({ period: "AM", ...e }));
   }
 
   const rows = [];
   if (Array.isArray(parsed.otEntries)) {
-    parsed.otEntries.forEach((e) => rows.push({ ...e, kind: "OT" }));
+    parsed.otEntries.forEach((e) => rows.push({ period: "AM", ...e, kind: "OT" }));
   }
   if (Array.isArray(parsed.breakEntries)) {
-    parsed.breakEntries.forEach((e) => rows.push({ ...e, kind: "BREAK" }));
+    parsed.breakEntries.forEach((e) => rows.push({ period: "AM", ...e, kind: "BREAK" }));
   }
   return rows;
 }
@@ -59,9 +60,10 @@ function employeeSelect(value) {
 
 function rowHtml(row) {
   return `
+    <td><input data-field="date" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" value="${row.date || ""}"></td>
+    <td><select data-field="period"><option value="AM" ${row.period === "AM" ? "selected" : ""}>AM</option><option value="PM" ${row.period === "PM" ? "selected" : ""}>PM</option></select></td>
     <td>${kindSelect(row.kind)}</td>
     <td>${employeeSelect(row.employeeId)}</td>
-    <td><input data-field="date" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" value="${row.date || ""}"></td>
     <td><input data-field="startTime" type="text" inputmode="numeric" placeholder="HH:MM" value="${row.startTime || ""}"></td>
     <td><input data-field="endTime" type="text" inputmode="numeric" placeholder="HH:MM" value="${row.endTime || ""}"></td>
     <td><button type="button" data-action="delete">Delete</button></td>
@@ -111,6 +113,7 @@ function toPayload() {
       id: row.id,
       employeeId: row.employeeId,
       date: row.date,
+      period: row.period,
       startTime: row.startTime,
       endTime: row.endTime
     };

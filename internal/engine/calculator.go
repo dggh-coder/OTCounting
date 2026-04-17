@@ -51,9 +51,12 @@ func (c *Calculator) Calculate(input CalculateInput) (CalculateOutput, error) {
 			segments = subtractRange(segments, br)
 		}
 
-		dateKey := otRange.Start.Format(dateLayout)
+		period := normalizePeriod(ot.Period, otRange.Start)
+		dateKey := sessionKey(otRange.Start.Format(dateLayout), period)
 		if _, ok := dailyAcc[ot.EmployeeID][dateKey]; !ok {
-			dailyAcc[ot.EmployeeID][dateKey] = &dayAccumulator{}
+			dailyAcc[ot.EmployeeID][dateKey] = &dayAccumulator{
+				dateLabel: formatDateLabel(otRange.Start.Format(dateLayout)) + " " + period,
+			}
 		}
 		acc := dailyAcc[ot.EmployeeID][dateKey]
 
@@ -97,7 +100,7 @@ func (c *Calculator) Calculate(input CalculateInput) (CalculateOutput, error) {
 			totalWeighted := float64(rate15Hours)*1.5 + float64(rate20Hours)*2.0
 
 			ds := DailySummary{
-				DateLabel:          formatDateLabel(dateKey),
+				DateLabel:          acc.dateLabel,
 				Rate20Segments:     acc.rate20Segs,
 				Rate20Minutes:      acc.rate20Minutes,
 				Rate20RoundedHours: rate20Hours,
@@ -108,7 +111,8 @@ func (c *Calculator) Calculate(input CalculateInput) (CalculateOutput, error) {
 			}
 			output.DailySummary[emp][dateKey] = ds
 
-			monthKey := dateKey[:7]
+			monthKey := dateKey[:6]
+			monthKey = monthKey[:4] + "-" + monthKey[4:]
 			ms := monthAcc[monthKey]
 			ms.Rate15RoundedHours += rate15Hours
 			ms.Rate20RoundedHours += rate20Hours
@@ -201,4 +205,30 @@ func mixedRoundHours(rate15Minutes, rate20Minutes int) (int, int) {
 		rate15Hours++
 	}
 	return rate15Hours, rate20Hours
+}
+
+func normalizePeriod(raw string, start time.Time) string {
+	switch raw {
+	case "AM", "am", "Am", "aM":
+		return "AM"
+	case "PM", "pm", "Pm", "pM":
+		return "PM"
+	default:
+		if start.Hour() < 12 {
+			return "AM"
+		}
+		return "PM"
+	}
+}
+
+func sessionKey(dateStr, period string) string {
+	t, err := time.Parse(dateLayout, dateStr)
+	if err != nil {
+		return dateStr + "_" + period
+	}
+	suffix := "01"
+	if period == "PM" {
+		suffix = "02"
+	}
+	return t.Format("20060102") + suffix
 }

@@ -1,8 +1,12 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"ot-uat/internal/engine"
@@ -21,7 +25,12 @@ func (s *CalculateService) Calculate(input engine.CalculateInput) (engine.Calcul
 	if err != nil {
 		return engine.CalculateOutput{}, err
 	}
-	return s.calculator.Calculate(normalized)
+	out, err := s.calculator.Calculate(normalized)
+	if err != nil {
+		return engine.CalculateOutput{}, err
+	}
+	_ = writeSessionCache(out)
+	return out, nil
 }
 
 func normalizeInput(input engine.CalculateInput) (engine.CalculateInput, error) {
@@ -31,41 +40,45 @@ func normalizeInput(input engine.CalculateInput) (engine.CalculateInput, error) 
 	}
 
 	for _, e := range input.OTEntries {
-		date, start, end, err := validateAndNormalizeCommon(e.EmployeeID, e.Date, e.StartTime, e.EndTime)
+		date, period, start, end, err := validateAndNormalizeCommon(e.EmployeeID, e.Date, e.Period, e.StartTime, e.EndTime)
 		if err != nil {
 			return engine.CalculateInput{}, fmt.Errorf("ot entry %s: %w", e.ID, err)
 		}
-		e.Date, e.StartTime, e.EndTime = date, start, end
+		e.Date, e.Period, e.StartTime, e.EndTime = date, period, start, end
 		out.OTEntries = append(out.OTEntries, e)
 	}
 	for _, e := range input.BreakEntries {
-		date, start, end, err := validateAndNormalizeCommon(e.EmployeeID, e.Date, e.StartTime, e.EndTime)
+		date, period, start, end, err := validateAndNormalizeCommon(e.EmployeeID, e.Date, e.Period, e.StartTime, e.EndTime)
 		if err != nil {
 			return engine.CalculateInput{}, fmt.Errorf("break entry %s: %w", e.ID, err)
 		}
-		e.Date, e.StartTime, e.EndTime = date, start, end
+		e.Date, e.Period, e.StartTime, e.EndTime = date, period, start, end
 		out.BreakEntries = append(out.BreakEntries, e)
 	}
 	return out, nil
 }
 
-func validateAndNormalizeCommon(employeeID engine.EmployeeID, date, start, end string) (string, string, string, error) {
+func validateAndNormalizeCommon(employeeID engine.EmployeeID, date, period, start, end string) (string, string, string, string, error) {
 	if employeeID != engine.EmployeeA && employeeID != engine.EmployeeB {
-		return "", "", "", errors.New("employeeId must be A or B")
+		return "", "", "", "", errors.New("employeeId must be A or B")
 	}
 	dateNorm, err := parseDate(date)
 	if err != nil {
-		return "", "", "", errors.New("date must be YYYY-MM-DD or MM/DD/YYYY")
+		return "", "", "", "", errors.New("date must be YYYY-MM-DD or MM/DD/YYYY")
+	}
+	periodNorm, err := parsePeriod(period)
+	if err != nil {
+		return "", "", "", "", errors.New("period must be AM or PM")
 	}
 	startNorm, err := parse24Hour(start)
 	if err != nil {
-		return "", "", "", errors.New("startTime must be 24-hour HH:MM")
+		return "", "", "", "", errors.New("startTime must be 24-hour HH:MM")
 	}
 	endNorm, err := parse24Hour(end)
 	if err != nil {
-		return "", "", "", errors.New("endTime must be 24-hour HH:MM")
+		return "", "", "", "", errors.New("endTime must be 24-hour HH:MM")
 	}
-	return dateNorm, startNorm, endNorm, nil
+	return dateNorm, periodNorm, startNorm, endNorm, nil
 }
 
 func parseDate(raw string) (string, error) {
@@ -83,4 +96,51 @@ func parse24Hour(raw string) (string, error) {
 		return "", err
 	}
 	return t.Format("15:04"), nil
+}
+
+func parsePeriod(raw string) (string, error) {
+	switch strings.ToUpper(strings.TrimSpace(raw)) {
+	case "AM":
+		return "AM", nil
+	case "PM":
+		return "PM", nil
+	default:
+		return "", errors.New("invalid period")
+	}
+}
+
+type cacheRecord struct {
+	DateLabel          string  `json:"dateLabel"`
+	Rate15RoundedHours int     `json:"rate15RoundedHours"`
+	Rate20RoundedHours int     `json:"rate20RoundedHours"`
+	TotalWeighted      float64 `json:"totalWeighted"`
+}
+
+func writeSessionCache(out engine.CalculateOutput) error {
+	cache := map[string]map[string]cacheRecord{}
+	for emp, byKey := range out.DailySummary {
+		empKey := string(emp)
+		for sessionKey, daily := range byKey {
+			if _, ok := cache[sessionKey]; !ok {
+				cache[sessionKey] = map[string]cacheRecord{}
+			}
+			cache[sessionKey][empKey] = cacheRecord{
+				DateLabel:          daily.DateLabel,
+				Rate15RoundedHours: daily.Rate15RoundedHours,
+				Rate20RoundedHours: daily.Rate20RoundedHours,
+				TotalWeighted:      daily.TotalWeighted,
+			}
+		}
+	}
+
+	baseDir := filepath.Join(os.TempDir(), "ot-uat")
+	if err := os.MkdirAll(baseDir, 0o755); err != nil {
+		return err
+	}
+	file := filepath.Join(baseDir, "session_summary_cache.json")
+	b, err := json.MarshalIndent(cache, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(file, b, 0o644)
 }

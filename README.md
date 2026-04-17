@@ -14,9 +14,11 @@ Open http://localhost:8080.
 
 - Use 24-hour times (`HH:MM`), e.g. `20:30`.
 - Date accepts `YYYY-MM-DD` and `MM/DD/YYYY`.
+- Session period is required: `AM` or `PM`.
 - UI uses one combined entry table with a Type selector (`OT` or `Break`).
 - Duplicate OT entries with the same employee and exact same start/end datetime are counted once.
 - Daily rounding uses combined 1.5/2.0 minute balancing (per latest UAT rule), not independent rounding per rate bucket.
+- Daily grouping key uses session code: `YYYYMMDD01` for AM and `YYYYMMDD02` for PM.
 
 ## Architecture
 
@@ -31,3 +33,4 @@ Open http://localhost:8080.
 - No login.
 - No database.
 - Data persistence is browser localStorage only.
+- Server also writes latest per-session summary snapshot to `${TMPDIR}/ot-uat/session_summary_cache.json`.

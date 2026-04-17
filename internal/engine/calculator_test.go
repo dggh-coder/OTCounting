@@ -5,12 +5,12 @@ import "testing"
 func TestCrossMidnightGroupedByStartDate(t *testing.T) {
 	calc := NewCalculator()
 	out, err := calc.Calculate(CalculateInput{
-		OTEntries: []OTEntry{{ID: "1", EmployeeID: EmployeeA, Date: "2026-04-14", StartTime: "23:30", EndTime: "01:00"}},
+		OTEntries: []OTEntry{{ID: "1", EmployeeID: EmployeeA, Date: "2026-04-14", Period: "PM", StartTime: "23:30", EndTime: "01:00"}},
 	})
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
-	day, ok := out.DailySummary[EmployeeA]["2026-04-14"]
+	day, ok := out.DailySummary[EmployeeA]["2026041402"]
 	if !ok {
 		t.Fatalf("expected start date key")
 	}
@@ -22,13 +22,13 @@ func TestCrossMidnightGroupedByStartDate(t *testing.T) {
 func TestBreaksOnlySameEmployee(t *testing.T) {
 	calc := NewCalculator()
 	out, err := calc.Calculate(CalculateInput{
-		OTEntries:    []OTEntry{{ID: "1", EmployeeID: EmployeeA, Date: "2026-04-14", StartTime: "20:00", EndTime: "21:00"}},
-		BreakEntries: []BreakEntry{{ID: "b", EmployeeID: EmployeeB, Date: "2026-04-14", StartTime: "20:15", EndTime: "20:45"}},
+		OTEntries:    []OTEntry{{ID: "1", EmployeeID: EmployeeA, Date: "2026-04-14", Period: "PM", StartTime: "20:00", EndTime: "21:00"}},
+		BreakEntries: []BreakEntry{{ID: "b", EmployeeID: EmployeeB, Date: "2026-04-14", Period: "PM", StartTime: "20:15", EndTime: "20:45"}},
 	})
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
-	if got := out.DailySummary[EmployeeA]["2026-04-14"].Rate20Minutes; got != 60 {
+	if got := out.DailySummary[EmployeeA]["2026041402"].Rate20Minutes; got != 60 {
 		t.Fatalf("expected 60 got %d", got)
 	}
 }
@@ -36,12 +36,12 @@ func TestBreaksOnlySameEmployee(t *testing.T) {
 func TestSpecialShortBoundaryRuleTieGoesTo20(t *testing.T) {
 	calc := NewCalculator()
 	out, err := calc.Calculate(CalculateInput{
-		OTEntries: []OTEntry{{ID: "1", EmployeeID: EmployeeA, Date: "2026-04-14", StartTime: "06:30", EndTime: "07:30"}},
+		OTEntries: []OTEntry{{ID: "1", EmployeeID: EmployeeA, Date: "2026-04-14", Period: "AM", StartTime: "06:30", EndTime: "07:30"}},
 	})
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
-	day := out.DailySummary[EmployeeA]["2026-04-14"]
+	day := out.DailySummary[EmployeeA]["2026041401"]
 	if day.Rate20Minutes != 60 || day.Rate15Minutes != 0 {
 		t.Fatalf("unexpected minutes: %+v", day)
 	}
@@ -50,12 +50,12 @@ func TestSpecialShortBoundaryRuleTieGoesTo20(t *testing.T) {
 func TestExcludeNonOTWindow(t *testing.T) {
 	calc := NewCalculator()
 	out, err := calc.Calculate(CalculateInput{
-		OTEntries: []OTEntry{{ID: "1", EmployeeID: EmployeeA, Date: "2026-04-14", StartTime: "08:00", EndTime: "19:00"}},
+		OTEntries: []OTEntry{{ID: "1", EmployeeID: EmployeeA, Date: "2026-04-14", Period: "AM", StartTime: "08:00", EndTime: "19:00"}},
 	})
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
-	day := out.DailySummary[EmployeeA]["2026-04-14"]
+	day := out.DailySummary[EmployeeA]["2026041401"]
 	if day.Rate15Minutes != 90 { // 08:00-08:45 and 18:15-19:00
 		t.Fatalf("expected 90 got %d", day.Rate15Minutes)
 	}
@@ -65,14 +65,14 @@ func TestDuplicateOTOnlyCountedOnce(t *testing.T) {
 	calc := NewCalculator()
 	out, err := calc.Calculate(CalculateInput{
 		OTEntries: []OTEntry{
-			{ID: "1", EmployeeID: EmployeeA, Date: "2026-04-14", StartTime: "20:00", EndTime: "22:00"},
-			{ID: "2", EmployeeID: EmployeeA, Date: "2026-04-14", StartTime: "20:00", EndTime: "22:00"},
+			{ID: "1", EmployeeID: EmployeeA, Date: "2026-04-14", Period: "PM", StartTime: "20:00", EndTime: "22:00"},
+			{ID: "2", EmployeeID: EmployeeA, Date: "2026-04-14", Period: "PM", StartTime: "20:00", EndTime: "22:00"},
 		},
 	})
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
-	day := out.DailySummary[EmployeeA]["2026-04-14"]
+	day := out.DailySummary[EmployeeA]["2026041402"]
 	if day.Rate20Minutes != 120 {
 		t.Fatalf("expected 120 minutes once, got %d", day.Rate20Minutes)
 	}
