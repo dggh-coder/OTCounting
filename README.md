@@ -157,6 +157,14 @@ podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "G
 podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "ALTER TABLE ot_uat.work_session OWNER TO ot_user; ALTER TABLE ot_uat.time_entry OWNER TO ot_user; ALTER TABLE ot_uat.session_result OWNER TO ot_user;"
 ```
 
+Or run the helper (recommended):
+
+```bash
+./scripts/fix-db-permissions.sh
+```
+
+Use this helper when backend logs show errors like `Invalid username/password` (SQLSTATE `28P01`) or `permission denied for database postgres` (SQLSTATE `42501`) on an existing DB volume.
+
 ## Fix: `failed to connect Unknown:5432`
 
 This usually means openGauss is not fully ready yet, or `GS_PASSWORD` does not match the initialized DB volume.
