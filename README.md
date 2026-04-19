@@ -17,6 +17,8 @@ Services:
 - Backend: http://localhost:8080
 - openGauss: localhost:5432
 
+Images are pinned with fully-qualified names (`docker.io/...`) to avoid Podman short-name resolution errors on hardened hosts.
+
 The backend initializes schema automatically on startup from `ot-backend/internal/db/schema.sql`.
 
 ## DB Schema

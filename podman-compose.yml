@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   opengauss:
-    image: opengauss/opengauss:6.0.0-RC1
+    image: docker.io/opengauss/opengauss:6.0.0-RC1
     container_name: ot-opengauss
     environment:
       GS_PASSWORD: "StrongPassw0rd!"
