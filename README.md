@@ -52,3 +52,48 @@ It creates:
 - `ot_uat.work_session`
 - `ot_uat.time_entry`
 - `ot_uat.session_result`
+
+## Next step after validating the tables
+
+If `SELECT tablename ...` returns the 3 expected tables (as in your output), the database bootstrap is complete. The next step is to verify end-to-end API + persistence.
+
+1) Keep the compose stack running and check backend health:
+
+```bash
+curl -s http://localhost:8080/healthz
+```
+
+Expected response:
+
+```json
+{"status":"ok"}
+```
+
+2) Submit one sample OT calculation:
+
+```bash
+curl -s -X POST http://localhost:8080/api/calculate \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "employee_id":"E1001",
+    "work_date":"2026-04-19",
+    "entries":[
+      {"start":"17:30","end":"20:00","entry_type":"work"},
+      {"start":"20:00","end":"20:30","entry_type":"break"},
+      {"start":"20:30","end":"22:00","entry_type":"work"}
+    ]
+  }'
+```
+
+3) Confirm a row was persisted to `work_session`:
+
+```bash
+podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_PASSWORD' \
+  -c "SET search_path TO ot_uat, public; SELECT id, employee_id, work_date, created_at FROM work_session ORDER BY created_at DESC LIMIT 5;"
+```
+
+4) Open the frontend and run the same flow in UI:
+
+- http://localhost:8081
+
+If all four checks pass, your UAT environment is ready for test scenarios.
