@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"ot-uat/internal/api"
 	"ot-uat/internal/db"
@@ -12,7 +14,10 @@ import (
 )
 
 func main() {
-	dsn := os.Getenv("DATABASE_URL")
+	dsn, err := databaseURLFromEnv()
+	if err != nil {
+		log.Fatalf("failed to read db config: %v", err)
+	}
 	store, err := db.NewStore(dsn)
 	if err != nil {
 		log.Fatalf("failed to init db: %v", err)
@@ -34,4 +39,32 @@ func main() {
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func databaseURLFromEnv() (string, error) {
+	host := envOr("DB_HOST", "opengauss")
+	port := envOr("DB_PORT", "5432")
+	name := envOr("DB_NAME", "postgres")
+	user := envOr("DB_USER", "omm")
+	password := os.Getenv("DB_PASSWORD")
+
+	if password == "" {
+		passFile := os.Getenv("DB_PASSWORD_FILE")
+		if passFile == "" {
+			return "", fmt.Errorf("set DB_PASSWORD or DB_PASSWORD_FILE")
+		}
+		b, err := os.ReadFile(passFile)
+		if err != nil {
+			return "", fmt.Errorf("read DB_PASSWORD_FILE: %w", err)
+		}
+		password = strings.TrimSpace(string(b))
+	}
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, name), nil
+}
+
+func envOr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }

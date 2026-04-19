@@ -17,12 +17,16 @@ services:
     build:
       context: ./ot-backend
     container_name: ot-backend
+    env_file:
+      - ./.env
     environment:
-      DATABASE_URL: postgres://omm:${OT_DB_PASSWORD}@opengauss:5432/postgres?sslmode=disable
+      DB_PASSWORD_FILE: /run/secrets/ot_db_password
     depends_on:
       - opengauss
     ports:
       - "8080:8080"
+    volumes:
+      - ./secrets/ot_db_password.txt:/run/secrets/ot_db_password:ro,Z
 
   ot-frontend:
     build:

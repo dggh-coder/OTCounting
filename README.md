@@ -12,12 +12,15 @@ This repository is split into two master folders:
 ```bash
 cp .env.example .env
 cp opengauss.env.example opengauss.env
+mkdir -p secrets
+cp secrets/ot_db_password.txt.example secrets/ot_db_password.txt
 ```
 
-2) Edit both files and set the same password value:
+2) Edit configs:
 
-- `.env` -> `OT_DB_PASSWORD=...`
 - `opengauss.env` -> `GS_PASSWORD=...`
+- `secrets/ot_db_password.txt` -> same DB password as `GS_PASSWORD`
+- `.env` -> non-secret DB host/port/name/user only
 
 3) Start services:
 

@@ -1,2 +1,3 @@
 opengauss.env
 .env
+secrets/ot_db_password.txt
