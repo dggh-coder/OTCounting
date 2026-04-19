@@ -124,32 +124,6 @@ podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "C
 podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "GRANT USAGE ON SCHEMA ot_uat TO ot_app; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ot_uat TO ot_app; ALTER DEFAULT PRIVILEGES IN SCHEMA ot_uat GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ot_app;"
 ```
 
-## Fix: `failed to connect Unknown:5432`
-
-This usually means openGauss is not fully ready yet, or `GS_PASSWORD` does not match the initialized DB volume.
-
-1) Ensure compose is using the correct DB image from `podman-compose.yml` (`docker.io/opengauss/opengauss-server:latest`) and not a different manual image.
-
-2) Wait for DB readiness and check logs:
-
-```bash
-podman logs -f --tail 200 ot-opengauss
-```
-
-3) Test login from inside the DB container (explicit localhost):
-
-```bash
-podman exec -it ot-opengauss gsql -h 127.0.0.1 -p 5432 -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "SELECT 1;"
-```
-
-4) If password/auth still fails after changing `opengauss.env`, you are likely reusing an old DB data directory (`/data/otopengaussdb`) initialized with a different password. Recreate the DB volume for a fresh init:
-
-```bash
-podman compose -f podman-compose.yml down
-sudo rm -rf /data/otopengaussdb/*
-podman compose -f podman-compose.yml up -d opengauss
-```
-
 ## Next step after validating the tables
 
 If `SELECT tablename ...` returns the 3 expected tables (as in your output), the database bootstrap is complete. The next step is to verify end-to-end API + persistence.
