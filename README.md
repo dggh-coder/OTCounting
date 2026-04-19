@@ -111,6 +111,12 @@ It creates:
 - `ot_uat.time_entry`
 - `ot_uat.session_result`
 
+If these tables already exist after `podman compose ... up -d opengauss`, **do not** run `001_schema.sql` manually again.
+
+- The entrypoint already executed it during first DB initialization.
+- Re-running is usually unnecessary and can hide credential/permission issues you should fix directly.
+- Only run schema SQL manually for intentional recovery/migration workflows.
+
 and initializes a backend DB account:
 
 - `ot_user` (password defaults to `GS_PASSWORD`, overridable with `OT_USER_DB_PASSWORD`)
