@@ -14,8 +14,8 @@ if [[ ! -f opengauss.env ]]; then
   cp opengauss.env.example opengauss.env
 fi
 
-read -r -p "Backend DB username [ot_app]: " APP_USER
-APP_USER="${APP_USER:-ot_app}"
+read -r -p "Backend DB username [ot_user]: " APP_USER
+APP_USER="${APP_USER:-ot_user}"
 
 while true; do
   read -r -s -p "Backend DB password: " APP_PASSWORD
@@ -32,8 +32,8 @@ GS_PASSWORD="${GS_PASSWORD:-${APP_PASSWORD}}"
 
 cat > opengauss.env <<ENV
 GS_PASSWORD=${GS_PASSWORD}
-OT_APP_DB_USER=${APP_USER}
-OT_APP_DB_PASSWORD=${APP_PASSWORD}
+OT_USER_DB_USER=${APP_USER}
+OT_USER_DB_PASSWORD=${APP_PASSWORD}
 GS_DB=postgres
 GAUSSHOME=/usr/local/opengauss
 PATH=/usr/local/opengauss/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin

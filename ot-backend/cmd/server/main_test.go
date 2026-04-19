@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestDatabaseURLFromEnvDefaultsToOtAppUser(t *testing.T) {
+func TestDatabaseURLFromEnvDefaultsToOtUser(t *testing.T) {
 	t.Setenv("DB_HOST", "")
 	t.Setenv("DB_PORT", "")
 	t.Setenv("DB_NAME", "")
@@ -17,8 +17,8 @@ func TestDatabaseURLFromEnvDefaultsToOtAppUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("databaseURLFromEnv error: %v", err)
 	}
-	if !strings.Contains(dsn, "postgres://ot_app:secret@opengauss:5432/postgres") {
-		t.Fatalf("expected DSN to use ot_app default user, got: %s", dsn)
+	if !strings.Contains(dsn, "postgres://ot_user:secret@opengauss:5432/postgres") {
+		t.Fatalf("expected DSN to use ot_user default user, got: %s", dsn)
 	}
 }
 

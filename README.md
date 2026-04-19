@@ -16,7 +16,7 @@ This repository is split into two master folders:
 This lets you type backend DB username/password and writes:
 
 - `.env` (`DB_USER`)
-- `opengauss.env` (`GS_PASSWORD`, `OT_APP_DB_USER`, `OT_APP_DB_PASSWORD`)
+- `opengauss.env` (`GS_PASSWORD`, `OT_USER_DB_USER`, `OT_USER_DB_PASSWORD`)
 - `secrets/ot_db_password.txt` (backend DB password)
 
 When to run this:
@@ -42,15 +42,15 @@ cp secrets/ot_db_password.txt.example secrets/ot_db_password.txt
 
 2) Edit configs:
 
-- `opengauss.env` -> set `GS_PASSWORD`, `OT_APP_DB_USER`, `OT_APP_DB_PASSWORD`
-- `secrets/ot_db_password.txt` -> same value as `OT_APP_DB_PASSWORD`
-- `.env` -> non-secret DB host/port/name/user only (`DB_USER` should match `OT_APP_DB_USER`)
+- `opengauss.env` -> set `GS_PASSWORD`, `OT_USER_DB_USER`, `OT_USER_DB_PASSWORD`
+- `secrets/ot_db_password.txt` -> same value as `OT_USER_DB_PASSWORD`
+- `.env` -> non-secret DB host/port/name/user only (`DB_USER` should match `OT_USER_DB_USER`)
 
 DB init user source precedence during first boot:
 
-1. `OT_APP_DB_USER` (from `opengauss.env`)
+1. `OT_USER_DB_USER` (from `opengauss.env`)
 2. `DB_USER` (from `.env`)
-3. fallback `ot_app`
+3. fallback `ot_user`
 
 3) Start services:
 
@@ -103,7 +103,7 @@ The backend initializes schema automatically on startup from `ot-backend/interna
 The openGauss init SQL is also mounted to the DB container at:
 
 - `deploy/opengauss-init/001_schema.sql`
-- `deploy/opengauss-init/002_create_ot_app_user.sh`
+- `deploy/opengauss-init/002_create_ot_user.sh`
 
 It creates:
 
@@ -113,9 +113,9 @@ It creates:
 
 and initializes a backend DB account:
 
-- `ot_app` (password defaults to `GS_PASSWORD`, overridable with `OT_APP_DB_PASSWORD`)
+- `ot_user` (password defaults to `GS_PASSWORD`, overridable with `OT_USER_DB_PASSWORD`)
 
-When the DB volume is fresh, `002_create_ot_app_user.sh` automatically creates/grants this app user during initialization.
+When the DB volume is fresh, `002_create_ot_user.sh` automatically creates/grants this app user during initialization.
 
 Important: DB init scripts run only on a **fresh** data directory. If `/data/otopengaussdb` already has data, changing `.env` later will not re-run user creation.
 
@@ -123,15 +123,15 @@ Important: DB init scripts run only on a **fresh** data directory. If `/data/oto
 
 If backend logs show this error, your backend is still connecting as `omm` (initial admin user), which openGauss blocks for remote TCP login.
 
-Use `DB_USER=ot_app` in `.env` and keep `secrets/ot_db_password.txt` aligned with the app user password.
+Use `DB_USER=ot_user` in `.env` and keep `secrets/ot_db_password.txt` aligned with the app user password.
 
-Backend DSN resolves username from `DB_USER` (default `ot_app`), so it no longer falls back to `omm`.
+Backend DSN resolves username from `DB_USER` (default `ot_user`), so it no longer falls back to `omm`.
 
 For an **already initialized DB volume** (init scripts do not re-run), create/grant the app user once:
 
 ```bash
-podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "CREATE USER ot_app WITH PASSWORD 'YOUR_APP_PASSWORD';"
-podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "GRANT USAGE ON SCHEMA ot_uat TO ot_app; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ot_uat TO ot_app; ALTER DEFAULT PRIVILEGES IN SCHEMA ot_uat GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ot_app;"
+podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "CREATE USER ot_user WITH PASSWORD 'YOUR_APP_PASSWORD';"
+podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "GRANT CONNECT ON DATABASE postgres TO ot_user; GRANT USAGE,CREATE ON SCHEMA ot_uat TO ot_user; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ot_uat TO ot_user; ALTER DEFAULT PRIVILEGES IN SCHEMA ot_uat GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ot_user;"
 ```
 
 ## Fix: `failed to connect Unknown:5432`
