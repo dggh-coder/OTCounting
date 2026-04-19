@@ -1,0 +1,198 @@
+# OT UAT Monorepo
+
+This repository is split into two master folders:
+
+- `ot-frontend/`: static UI served by nginx in a Podman container.
+- `ot-backend/`: Go API + OT engine + openGauss persistence.
+
+## Run with Podman Compose
+
+1) Initialize credentials (recommended interactive way):
+
+```bash
+./scripts/init-db-credentials.sh
+```
+
+This lets you type backend DB username/password and writes:
+
+- `.env` (`DB_USER`)
+- `opengauss.env` (`GS_PASSWORD`, `OT_APP_DB_USER`, `OT_APP_DB_PASSWORD`)
+- `secrets/ot_db_password.txt` (backend DB password)
+
+When to run this:
+
+- **First-time setup** on a new machine/repo clone (before first `podman compose up`).
+- **Any time you change DB username/password** and want `.env`, `opengauss.env`, and secret file to stay in sync.
+- **After deleting/recreating env/secret files**.
+
+Then start the stack:
+
+```bash
+podman compose -f podman-compose.yml up --build
+```
+
+Or copy templates manually:
+
+```bash
+cp .env.example .env
+cp opengauss.env.example opengauss.env
+mkdir -p secrets
+cp secrets/ot_db_password.txt.example secrets/ot_db_password.txt
+```
+
+2) Edit configs:
+
+- `opengauss.env` -> set `GS_PASSWORD`, `OT_APP_DB_USER`, `OT_APP_DB_PASSWORD`
+- `secrets/ot_db_password.txt` -> same value as `OT_APP_DB_PASSWORD`
+- `.env` -> non-secret DB host/port/name/user only (`DB_USER` should match `OT_APP_DB_USER`)
+
+3) Start services:
+
+```bash
+sudo mkdir -p /data/otopengaussdb
+podman compose -f podman-compose.yml up --build
+```
+
+openGauss data is persisted on host path: `/data/otopengaussdb`.
+
+Services:
+
+- Frontend: http://localhost:8081
+- Backend: http://localhost:8080
+- openGauss: localhost:5432
+
+## Run backend only (DB already running)
+
+If your openGauss container is already up and initialized, you can start only the backend service:
+
+```bash
+podman compose -f podman-compose.yml up --build --no-deps ot-backend
+```
+
+Notes:
+
+- `--no-deps` prevents compose from trying to (re)start `opengauss`.
+- Backend image build is configured with `network: host` in compose so `go mod download` uses host DNS (avoids common `proxy.golang.org` lookup timeout during build).
+- Keep `.env` with `DB_HOST=opengauss` when backend and DB are on the same compose network.
+- If you started DB outside compose/network, set `DB_HOST` to the reachable hostname/IP before starting backend.
+
+DNS behavior note:
+
+- For backend **image builds**, host DNS is used at build time (`build.network: host`). If host DNS changes tomorrow, the next build automatically uses the new host DNS.
+- For already-running containers, DNS config is not hot-reloaded. Restart/recreate the container after DNS changes so it picks up updated resolver settings.
+
+Optional one-time rebuild + detached run:
+
+```bash
+podman compose -f podman-compose.yml build ot-backend
+podman compose -f podman-compose.yml up -d --no-deps ot-backend
+```
+
+Images are pinned with fully-qualified names (`docker.io/...`) to avoid Podman short-name resolution errors on hardened hosts.
+
+The backend initializes schema automatically on startup from `ot-backend/internal/db/schema.sql`.
+
+## DB Schema
+
+The openGauss init SQL is also mounted to the DB container at:
+
+- `deploy/opengauss-init/001_schema.sql`
+- `deploy/opengauss-init/002_create_ot_app_user.sh`
+
+It creates:
+
+- `ot_uat.work_session`
+- `ot_uat.time_entry`
+- `ot_uat.session_result`
+
+and initializes a backend DB account:
+
+- `ot_app` (password defaults to `GS_PASSWORD`, overridable with `OT_APP_DB_PASSWORD`)
+
+When the DB volume is fresh, `002_create_ot_app_user.sh` automatically creates/grants this app user during initialization.
+
+## Fix: `FATAL: Forbid remote connection with initial user`
+
+If backend logs show this error, your backend is still connecting as `omm` (initial admin user), which openGauss blocks for remote TCP login.
+
+Use `DB_USER=ot_app` in `.env` and keep `secrets/ot_db_password.txt` aligned with the app user password.
+
+Backend DSN resolves username from `DB_USER` (default `ot_app`), so it no longer falls back to `omm`.
+
+For an **already initialized DB volume** (init scripts do not re-run), create/grant the app user once:
+
+```bash
+podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "CREATE USER ot_app WITH PASSWORD 'YOUR_APP_PASSWORD';"
+podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "GRANT USAGE ON SCHEMA ot_uat TO ot_app; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ot_uat TO ot_app; ALTER DEFAULT PRIVILEGES IN SCHEMA ot_uat GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ot_app;"
+```
+
+## Fix: `failed to connect Unknown:5432`
+
+This usually means openGauss is not fully ready yet, or `GS_PASSWORD` does not match the initialized DB volume.
+
+1) Ensure compose is using the correct DB image from `podman-compose.yml` (`docker.io/opengauss/opengauss-server:latest`) and not a different manual image.
+
+2) Wait for DB readiness and check logs:
+
+```bash
+podman logs -f --tail 200 ot-opengauss
+```
+
+3) Test login from inside the DB container (explicit localhost):
+
+```bash
+podman exec -it ot-opengauss gsql -h 127.0.0.1 -p 5432 -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "SELECT 1;"
+```
+
+4) If password/auth still fails after changing `opengauss.env`, you are likely reusing an old DB data directory (`/data/otopengaussdb`) initialized with a different password. Recreate the DB volume for a fresh init:
+
+```bash
+podman compose -f podman-compose.yml down
+sudo rm -rf /data/otopengaussdb/*
+podman compose -f podman-compose.yml up -d opengauss
+```
+
+## Next step after validating the tables
+
+If `SELECT tablename ...` returns the 3 expected tables (as in your output), the database bootstrap is complete. The next step is to verify end-to-end API + persistence.
+
+1) Keep the compose stack running and check backend health:
+
+```bash
+curl -s http://localhost:8080/healthz
+```
+
+Expected response:
+
+```json
+{"status":"ok"}
+```
+
+2) Submit one sample OT calculation:
+
+```bash
+curl -s -X POST http://localhost:8080/api/calculate \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "employee_id":"E1001",
+    "work_date":"2026-04-19",
+    "entries":[
+      {"start":"17:30","end":"20:00","entry_type":"work"},
+      {"start":"20:00","end":"20:30","entry_type":"break"},
+      {"start":"20:30","end":"22:00","entry_type":"work"}
+    ]
+  }'
+```
+
+3) Confirm a row was persisted to `work_session`:
+
+```bash
+podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_PASSWORD' \
+  -c "SET search_path TO ot_uat, public; SELECT id, employee_id, work_date, created_at FROM work_session ORDER BY created_at DESC LIMIT 5;"
+```
+
+4) Open the frontend and run the same flow in UI:
+
+- http://localhost:8081
+
+If all four checks pass, your UAT environment is ready for test scenarios.
