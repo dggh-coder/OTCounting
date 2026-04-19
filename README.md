@@ -125,6 +125,20 @@ When the DB volume is fresh, `002_create_ot_user.sh` automatically creates/grant
 
 Important: DB init scripts run only on a **fresh** data directory. If `/data/otopengaussdb` already has data, changing `.env` later will not re-run user creation.
 
+### DB users and passwords (quick clarification)
+
+- `omm` is the openGauss initial admin user. Its password is `GS_PASSWORD` from `opengauss.env` **at first initialization time**.
+- `ot_user` is the application user created by `002_create_ot_user.sh` (password defaults to `OT_USER_DB_PASSWORD`, or falls back to `GS_PASSWORD`).
+- `secrets/ot_db_password.txt` is only for backend runtime login password injection; it does not define DB users by itself.
+- Credentials are not stored in this repo after startup; live auth data is inside the DB data directory (`/data/otopengaussdb`).
+- If you change `opengauss.env` later, existing initialized DB credentials do not automatically change.
+
+Check existing DB roles:
+
+```bash
+podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "\du"
+```
+
 ## Fix: `FATAL: Forbid remote connection with initial user`
 
 If backend logs show this error, your backend is still connecting as `omm` (initial admin user), which openGauss blocks for remote TCP login.
