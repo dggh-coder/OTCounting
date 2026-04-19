@@ -19,6 +19,18 @@ This lets you type backend DB username/password and writes:
 - `opengauss.env` (`GS_PASSWORD`, `OT_APP_DB_USER`, `OT_APP_DB_PASSWORD`)
 - `secrets/ot_db_password.txt` (backend DB password)
 
+When to run this:
+
+- **First-time setup** on a new machine/repo clone (before first `podman compose up`).
+- **Any time you change DB username/password** and want `.env`, `opengauss.env`, and secret file to stay in sync.
+- **After deleting/recreating env/secret files**.
+
+Then start the stack:
+
+```bash
+podman compose -f podman-compose.yml up --build
+```
+
 Or copy templates manually:
 
 ```bash
