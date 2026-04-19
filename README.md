@@ -46,6 +46,12 @@ cp secrets/ot_db_password.txt.example secrets/ot_db_password.txt
 - `secrets/ot_db_password.txt` -> same value as `OT_APP_DB_PASSWORD`
 - `.env` -> non-secret DB host/port/name/user only (`DB_USER` should match `OT_APP_DB_USER`)
 
+DB init user source precedence during first boot:
+
+1. `OT_APP_DB_USER` (from `opengauss.env`)
+2. `DB_USER` (from `.env`)
+3. fallback `ot_app`
+
 3) Start services:
 
 ```bash
@@ -110,6 +116,8 @@ and initializes a backend DB account:
 - `ot_app` (password defaults to `GS_PASSWORD`, overridable with `OT_APP_DB_PASSWORD`)
 
 When the DB volume is fresh, `002_create_ot_app_user.sh` automatically creates/grants this app user during initialization.
+
+Important: DB init scripts run only on a **fresh** data directory. If `/data/otopengaussdb` already has data, changing `.env` later will not re-run user creation.
 
 ## Fix: `FATAL: Forbid remote connection with initial user`
 

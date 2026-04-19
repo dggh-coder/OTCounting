@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_USER="${OT_APP_DB_USER:-ot_app}"
+APP_USER="${OT_APP_DB_USER:-${DB_USER:-ot_app}}"
 APP_PASSWORD="${OT_APP_DB_PASSWORD:-${GS_PASSWORD:-}}"
 
 if [[ -z "${APP_PASSWORD}" ]]; then
