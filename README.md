@@ -7,7 +7,19 @@ This repository is split into two master folders:
 
 ## Run with Podman Compose
 
-1) Copy env templates and set password:
+1) Initialize credentials (recommended interactive way):
+
+```bash
+./scripts/init-db-credentials.sh
+```
+
+This lets you type backend DB username/password and writes:
+
+- `.env` (`DB_USER`)
+- `opengauss.env` (`GS_PASSWORD`, `OT_APP_DB_USER`, `OT_APP_DB_PASSWORD`)
+- `secrets/ot_db_password.txt` (backend DB password)
+
+Or copy templates manually:
 
 ```bash
 cp .env.example .env
@@ -18,9 +30,9 @@ cp secrets/ot_db_password.txt.example secrets/ot_db_password.txt
 
 2) Edit configs:
 
-- `opengauss.env` -> `GS_PASSWORD=...`
-- `secrets/ot_db_password.txt` -> same DB password as `GS_PASSWORD`
-- `.env` -> non-secret DB host/port/name/user only (`DB_USER=ot_app`)
+- `opengauss.env` -> set `GS_PASSWORD`, `OT_APP_DB_USER`, `OT_APP_DB_PASSWORD`
+- `secrets/ot_db_password.txt` -> same value as `OT_APP_DB_PASSWORD`
+- `.env` -> non-secret DB host/port/name/user only (`DB_USER` should match `OT_APP_DB_USER`)
 
 3) Start services:
 
@@ -84,6 +96,8 @@ It creates:
 and initializes a backend DB account:
 
 - `ot_app` (password defaults to `GS_PASSWORD`, overridable with `OT_APP_DB_PASSWORD`)
+
+When the DB volume is fresh, `002_create_ot_app_user.sh` automatically creates/grants this app user during initialization.
 
 ## Fix: `FATAL: Forbid remote connection with initial user`
 
