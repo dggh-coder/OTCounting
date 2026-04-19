@@ -1,36 +1,32 @@
-# OT Calculator Website (Go)
+# OT UAT Monorepo
 
-Simple UAT overtime calculator for Employee A and Employee B.
+This repository is split into two master folders:
 
-## Run
+- `ot-frontend/`: static UI served by nginx in a Podman container.
+- `ot-backend/`: Go API + OT engine + openGauss persistence.
+
+## Run with Podman Compose
 
 ```bash
-go run ./cmd/server
+podman compose -f podman-compose.yml up --build
 ```
 
-Open http://localhost:8080.
+Services:
 
-## Input rules
+- Frontend: http://localhost:8081
+- Backend: http://localhost:8080
+- openGauss: localhost:5432
 
-- Use 24-hour times (`HH:MM`), e.g. `20:30`.
-- Date accepts `YYYY-MM-DD` and `MM/DD/YYYY`.
-- Session period is required: `AM` or `PM`.
-- UI uses one combined entry table with a Type selector (`OT` or `Break`).
-- Duplicate OT entries with the same employee and exact same start/end datetime are counted once.
-- Daily rounding uses combined 1.5/2.0 minute balancing (per latest UAT rule), not independent rounding per rate bucket.
-- Daily grouping key uses session code: `YYYYMMDD01` for AM and `YYYYMMDD02` for PM.
+The backend initializes schema automatically on startup from `ot-backend/internal/db/schema.sql`.
 
-## Architecture
+## DB Schema
 
-- `internal/web`: HTML template rendering.
-- `internal/api`: JSON API handler (`POST /api/calculate`).
-- `internal/service`: input validation/normalization and orchestration.
-- `internal/engine`: all OT/business rules.
-- `static/app.js`: localStorage + API calls + rendering only (no OT math).
+The openGauss init SQL is also mounted to the DB container at:
 
-## Notes
+- `deploy/opengauss-init/001_schema.sql`
 
-- No login.
-- No database.
-- Data persistence is browser localStorage only.
-- Server also writes latest per-session summary snapshot to `${TMPDIR}/ot-uat/session_summary_cache.json`.
+It creates:
+
+- `ot_uat.work_session`
+- `ot_uat.time_entry`
+- `ot_uat.session_result`

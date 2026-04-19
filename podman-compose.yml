@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  opengauss:
+    image: opengauss/opengauss:6.0.0-RC1
+    container_name: ot-opengauss
+    environment:
+      GS_PASSWORD: "StrongPassw0rd!"
+      GS_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ogdata:/var/lib/opengauss
+      - ./deploy/opengauss-init:/docker-entrypoint-initdb.d:ro
+
+  ot-backend:
+    build:
+      context: ./ot-backend
+    container_name: ot-backend
+    environment:
+      DATABASE_URL: postgres://omm:StrongPassw0rd!@opengauss:5432/postgres?sslmode=disable
+    depends_on:
+      - opengauss
+    ports:
+      - "8080:8080"
+
+  ot-frontend:
+    build:
+      context: ./ot-frontend
+    container_name: ot-frontend
+    depends_on:
+      - ot-backend
+    ports:
+      - "8081:8081"
+
+volumes:
+  ogdata:
