@@ -45,7 +45,7 @@ func databaseURLFromEnv() (string, error) {
 	host := envOr("DB_HOST", "opengauss")
 	port := envOr("DB_PORT", "5432")
 	name := envOr("DB_NAME", "postgres")
-	user := envOr("DB_USER", "omm")
+	user := envOr("DB_USER", "ot_app")
 	password := os.Getenv("DB_PASSWORD")
 
 	if password == "" {
