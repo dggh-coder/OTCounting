@@ -22,8 +22,11 @@ cp opengauss.env.example opengauss.env
 3) Start services:
 
 ```bash
+sudo mkdir -p /data/otopengaussdb
 podman compose -f podman-compose.yml up --build
 ```
+
+openGauss data is persisted on host path: `/data/otopengaussdb`.
 
 Services:
 

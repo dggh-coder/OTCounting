@@ -10,7 +10,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ogdata:/var/lib/opengauss
+      - /data/otopengaussdb:/var/lib/opengauss:Z
       - ./deploy/opengauss-init:/docker-entrypoint-initdb.d:ro
 
   ot-backend:
@@ -32,6 +32,3 @@ services:
       - ot-backend
     ports:
       - "8081:8081"
-
-volumes:
-  ogdata:
