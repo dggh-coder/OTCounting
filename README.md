@@ -37,6 +37,27 @@ Services:
 - Backend: http://localhost:8080
 - openGauss: localhost:5432
 
+## Run backend only (DB already running)
+
+If your openGauss container is already up and initialized, you can start only the backend service:
+
+```bash
+podman compose -f podman-compose.yml up --build --no-deps ot-backend
+```
+
+Notes:
+
+- `--no-deps` prevents compose from trying to (re)start `opengauss`.
+- Keep `.env` with `DB_HOST=opengauss` when backend and DB are on the same compose network.
+- If you started DB outside compose/network, set `DB_HOST` to the reachable hostname/IP before starting backend.
+
+Optional one-time rebuild + detached run:
+
+```bash
+podman compose -f podman-compose.yml build ot-backend
+podman compose -f podman-compose.yml up -d --no-deps ot-backend
+```
+
 Images are pinned with fully-qualified names (`docker.io/...`) to avoid Podman short-name resolution errors on hardened hosts.
 
 The backend initializes schema automatically on startup from `ot-backend/internal/db/schema.sql`.
