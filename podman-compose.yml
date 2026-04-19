@@ -1,11 +1,12 @@
 version: "3.9"
 services:
   opengauss:
-    image: docker.io/opengauss/opengauss:6.0.0-RC1
+    image: docker.io/opengauss/opengauss-server:latest
     container_name: ot-opengauss
-    environment:
-      GS_PASSWORD: "StrongPassw0rd!"
-      GS_DB: postgres
+    privileged: true
+    shm_size: "1g"
+    env_file:
+      - ./opengauss.env
     ports:
       - "5432:5432"
     volumes:
@@ -17,7 +18,7 @@ services:
       context: ./ot-backend
     container_name: ot-backend
     environment:
-      DATABASE_URL: postgres://omm:StrongPassw0rd!@opengauss:5432/postgres?sslmode=disable
+      DATABASE_URL: postgres://omm:${OT_DB_PASSWORD}@opengauss:5432/postgres?sslmode=disable
     depends_on:
       - opengauss
     ports:

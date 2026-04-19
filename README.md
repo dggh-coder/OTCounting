@@ -7,6 +7,20 @@ This repository is split into two master folders:
 
 ## Run with Podman Compose
 
+1) Copy env templates and set password:
+
+```bash
+cp .env.example .env
+cp opengauss.env.example opengauss.env
+```
+
+2) Edit both files and set the same password value:
+
+- `.env` -> `OT_DB_PASSWORD=...`
+- `opengauss.env` -> `GS_PASSWORD=...`
+
+3) Start services:
+
 ```bash
 podman compose -f podman-compose.yml up --build
 ```
