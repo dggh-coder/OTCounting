@@ -52,6 +52,11 @@ Notes:
 - Keep `.env` with `DB_HOST=opengauss` when backend and DB are on the same compose network.
 - If you started DB outside compose/network, set `DB_HOST` to the reachable hostname/IP before starting backend.
 
+DNS behavior note:
+
+- For backend **image builds**, host DNS is used at build time (`build.network: host`). If host DNS changes tomorrow, the next build automatically uses the new host DNS.
+- For already-running containers, DNS config is not hot-reloaded. Restart/recreate the container after DNS changes so it picks up updated resolver settings.
+
 Optional one-time rebuild + detached run:
 
 ```bash
