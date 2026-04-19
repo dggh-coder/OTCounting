@@ -20,7 +20,7 @@ cp secrets/ot_db_password.txt.example secrets/ot_db_password.txt
 
 - `opengauss.env` -> `GS_PASSWORD=...`
 - `secrets/ot_db_password.txt` -> same DB password as `GS_PASSWORD`
-- `.env` -> non-secret DB host/port/name/user only
+- `.env` -> non-secret DB host/port/name/user only (`DB_USER=ot_app`)
 
 3) Start services:
 
@@ -73,12 +73,30 @@ The backend initializes schema automatically on startup from `ot-backend/interna
 The openGauss init SQL is also mounted to the DB container at:
 
 - `deploy/opengauss-init/001_schema.sql`
+- `deploy/opengauss-init/002_create_ot_app_user.sh`
 
 It creates:
 
 - `ot_uat.work_session`
 - `ot_uat.time_entry`
 - `ot_uat.session_result`
+
+and initializes a backend DB account:
+
+- `ot_app` (password defaults to `GS_PASSWORD`, overridable with `OT_APP_DB_PASSWORD`)
+
+## Fix: `FATAL: Forbid remote connection with initial user`
+
+If backend logs show this error, your backend is still connecting as `omm` (initial admin user), which openGauss blocks for remote TCP login.
+
+Use `DB_USER=ot_app` in `.env` and keep `secrets/ot_db_password.txt` aligned with the app user password.
+
+For an **already initialized DB volume** (init scripts do not re-run), create/grant the app user once:
+
+```bash
+podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "CREATE USER ot_app WITH PASSWORD 'YOUR_APP_PASSWORD';"
+podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "GRANT USAGE ON SCHEMA ot_uat TO ot_app; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ot_uat TO ot_app; ALTER DEFAULT PRIVILEGES IN SCHEMA ot_uat GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ot_app;"
+```
 
 ## Next step after validating the tables
 
