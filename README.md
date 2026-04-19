@@ -124,8 +124,11 @@ and initializes a backend DB account:
 When the DB volume is fresh, `002_create_ot_user.sh` automatically creates/grants this app user during initialization.
 
 It also reassigns ownership of existing `ot_uat` tables to `ot_user` during init so backend writes are not blocked by table-owner mismatches.
+It also sets `ot_user` as owner of schema `ot_uat`.
 
 Important: DB init scripts run only on a **fresh** data directory. If `/data/otopengaussdb` already has data, changing `.env` later will not re-run user creation.
+
+If you want permissions/username/password to be auto-ready **at container creation time** with no manual steps, create the DB container with a fresh empty `/data/otopengaussdb` so init scripts execute.
 
 ### DB users and passwords (quick clarification)
 
@@ -153,7 +156,7 @@ For an **already initialized DB volume** (init scripts do not re-run), create/gr
 
 ```bash
 podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "CREATE USER ot_user WITH PASSWORD 'YOUR_APP_PASSWORD';"
-podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "GRANT CONNECT ON DATABASE postgres TO ot_user; GRANT USAGE,CREATE ON SCHEMA ot_uat TO ot_user; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ot_uat TO ot_user; ALTER DEFAULT PRIVILEGES IN SCHEMA ot_uat GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ot_user;"
+podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "GRANT CONNECT ON DATABASE postgres TO ot_user; GRANT USAGE,CREATE ON SCHEMA ot_uat TO ot_user; ALTER SCHEMA ot_uat OWNER TO ot_user; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ot_uat TO ot_user; ALTER DEFAULT PRIVILEGES IN SCHEMA ot_uat GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ot_user;"
 podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "ALTER TABLE ot_uat.work_session OWNER TO ot_user; ALTER TABLE ot_uat.time_entry OWNER TO ot_user; ALTER TABLE ot_uat.session_result OWNER TO ot_user;"
 ```
 
