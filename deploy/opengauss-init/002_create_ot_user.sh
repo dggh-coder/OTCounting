@@ -27,6 +27,21 @@ GRANT CONNECT ON DATABASE postgres TO ${APP_USER};
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA ot_uat TO ${APP_USER};
 ALTER DEFAULT PRIVILEGES IN SCHEMA ot_uat
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ${APP_USER};
+
+DO
+\$\$
+DECLARE
+  r RECORD;
+BEGIN
+  FOR r IN
+    SELECT tablename
+    FROM pg_tables
+    WHERE schemaname = 'ot_uat'
+  LOOP
+    EXECUTE format('ALTER TABLE ot_uat.%I OWNER TO %I', r.tablename, '${APP_USER}');
+  END LOOP;
+END
+\$\$;
 EOSQL
 
 echo "OT user '${APP_USER}' is ready."
