@@ -16,6 +16,7 @@ services:
   ot-backend:
     build:
       context: ./ot-backend
+      network: host
     container_name: ot-backend
     env_file:
       - ./.env

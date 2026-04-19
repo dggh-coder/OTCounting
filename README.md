@@ -48,6 +48,7 @@ podman compose -f podman-compose.yml up --build --no-deps ot-backend
 Notes:
 
 - `--no-deps` prevents compose from trying to (re)start `opengauss`.
+- Backend image build is configured with `network: host` in compose so `go mod download` uses host DNS (avoids common `proxy.golang.org` lookup timeout during build).
 - Keep `.env` with `DB_HOST=opengauss` when backend and DB are on the same compose network.
 - If you started DB outside compose/network, set `DB_HOST` to the reachable hostname/IP before starting backend.
 
