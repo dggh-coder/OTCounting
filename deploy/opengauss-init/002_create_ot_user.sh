@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_USER="${OT_USER_DB_USER:-${DB_USER:-ot_user}}"
+APP_PASSWORD="${OT_USER_DB_PASSWORD:-${GS_PASSWORD:-}}"
+
+if [[ -z "${APP_PASSWORD}" ]]; then
+  echo "OT user setup skipped: OT_USER_DB_PASSWORD/GS_PASSWORD is empty"
+  exit 0
+fi
+
+gsql -v ON_ERROR_STOP=1 -d postgres -U omm <<EOSQL
+DO
+\$\$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${APP_USER}') THEN
+    EXECUTE format('CREATE USER %I WITH PASSWORD %L', '${APP_USER}', '${APP_PASSWORD}');
+  ELSE
+    EXECUTE format('ALTER USER %I WITH PASSWORD %L', '${APP_USER}', '${APP_PASSWORD}');
+  END IF;
+END
+\$\$;
+
+GRANT USAGE ON SCHEMA ot_uat TO ${APP_USER};
+GRANT CREATE ON SCHEMA ot_uat TO ${APP_USER};
+GRANT CONNECT ON DATABASE postgres TO ${APP_USER};
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA ot_uat TO ${APP_USER};
+ALTER DEFAULT PRIVILEGES IN SCHEMA ot_uat
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ${APP_USER};
+EOSQL
+
+echo "OT user '${APP_USER}' is ready."
