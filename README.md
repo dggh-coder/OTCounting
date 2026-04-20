@@ -156,7 +156,7 @@ For an **already initialized DB volume** (init scripts do not re-run), create/gr
 
 ```bash
 podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "CREATE USER ot_user WITH PASSWORD 'YOUR_APP_PASSWORD';"
-podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "GRANT CONNECT ON DATABASE postgres TO ot_user; GRANT USAGE,CREATE ON SCHEMA ot_uat TO ot_user; ALTER SCHEMA ot_uat OWNER TO ot_user; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ot_uat TO ot_user; ALTER DEFAULT PRIVILEGES IN SCHEMA ot_uat GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ot_user;"
+podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "GRANT CONNECT,CREATE,TEMP ON DATABASE postgres TO ot_user; GRANT USAGE,CREATE ON SCHEMA ot_uat TO ot_user; ALTER SCHEMA ot_uat OWNER TO ot_user; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ot_uat TO ot_user; ALTER DEFAULT PRIVILEGES IN SCHEMA ot_uat GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ot_user;"
 podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "ALTER TABLE ot_uat.work_session OWNER TO ot_user; ALTER TABLE ot_uat.time_entry OWNER TO ot_user; ALTER TABLE ot_uat.session_result OWNER TO ot_user;"
 ```
 
@@ -167,6 +167,8 @@ Or run the helper (recommended):
 ```
 
 Use this helper when backend logs show errors like `Invalid username/password` (SQLSTATE `28P01`) or `permission denied for database postgres` (SQLSTATE `42501`) on an existing DB volume.
+
+If logs show both `002_create_ot_app_user.sh` and `002_create_ot_user.sh` running, you likely still have a legacy script file in `deploy/opengauss-init/` on disk. Remove `002_create_ot_app_user.sh` and recreate the DB container with a fresh data directory.
 
 ## Fix: `failed to connect Unknown:5432`
 

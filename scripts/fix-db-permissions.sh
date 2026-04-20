@@ -32,13 +32,13 @@ BEGIN \
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${APP_USER}') THEN \
     EXECUTE format('CREATE USER %I WITH PASSWORD %L', '${APP_USER}', '${APP_PASSWORD}'); \
   ELSE \
-    EXECUTE format('ALTER USER %I WITH PASSWORD %L', '${APP_USER}', '${APP_PASSWORD}'); \
+    RAISE NOTICE 'Role % already exists; skip password reset.', '${APP_USER}'; \
   END IF; \
 END \
 \$\$;"
 
 podman exec -i ot-opengauss gsql -d postgres -U omm -W "${GS_PASSWORD}" -c \
-"GRANT CONNECT ON DATABASE postgres TO ${APP_USER}; \
+"GRANT CONNECT,CREATE,TEMP ON DATABASE postgres TO ${APP_USER}; \
  GRANT USAGE,CREATE ON SCHEMA ot_uat TO ${APP_USER}; \
  ALTER SCHEMA ot_uat OWNER TO ${APP_USER}; \
  GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ot_uat TO ${APP_USER}; \
