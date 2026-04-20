@@ -1,0 +1,41 @@
+version: "3.9"
+services:
+  opengauss:
+    image: docker.io/opengauss/opengauss-server:latest
+    container_name: ot-opengauss
+    privileged: true
+    shm_size: "1g"
+    env_file:
+      - ./opengauss.env
+      - ./.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - /data/otopengauss/db:/var/lib/opengauss:Z
+      - /data/otopengauss/log:/var/log/opengauss:Z
+      - ./deploy/opengauss-init:/docker-entrypoint-initdb.d:ro
+
+  ot-backend:
+    build:
+      context: ./ot-backend
+      network: host
+    container_name: ot-backend
+    env_file:
+      - ./.env
+    environment:
+      DB_PASSWORD_FILE: /run/secrets/ot_db_password
+    depends_on:
+      - opengauss
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./secrets/ot_db_password.txt:/run/secrets/ot_db_password:ro,Z
+
+  ot-frontend:
+    build:
+      context: ./ot-frontend
+    container_name: ot-frontend
+    depends_on:
+      - ot-backend
+    ports:
+      - "8081:8081"
