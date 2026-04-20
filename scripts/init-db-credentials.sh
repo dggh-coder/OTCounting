@@ -45,6 +45,8 @@ DB_HOST=opengauss
 DB_PORT=5432
 DB_NAME=postgres
 DB_USER=${APP_USER}
+OTOPENGAUSS_DB_PATH=/data/otopengauss/db
+OTOPENGAUSS_LOG_PATH=/data/otopengauss/log
 ENV
 
 printf '%s\n' "${APP_PASSWORD}" > secrets/ot_db_password.txt

@@ -45,6 +45,9 @@ cp secrets/ot_db_password.txt.example secrets/ot_db_password.txt
 - `opengauss.env` -> set `GS_PASSWORD`, `OT_USER_DB_USER`, `OT_USER_DB_PASSWORD`, `GAUSSLOG=/var/log/opengauss`
 - `secrets/ot_db_password.txt` -> same value as `OT_USER_DB_PASSWORD`
 - `.env` -> non-secret DB host/port/name/user only (`DB_USER` should match `OT_USER_DB_USER`)
+- `.env` -> also controls host volume paths used by compose (`OTOPENGAUSS_DB_PATH`, `OTOPENGAUSS_LOG_PATH`)
+
+> Note: `podman-compose` volume interpolation reads from shell/`.env`, not from `opengauss.env`.
 
 DB init user source precedence during first boot:
 

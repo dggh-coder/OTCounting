@@ -11,8 +11,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - /data/otopengauss/db:/var/lib/opengauss:Z
-      - /data/otopengauss/log:/var/log/opengauss:Z
+      - ${OTOPENGAUSS_DB_PATH:-/data/otopengauss/db}:/var/lib/opengauss:Z
+      - ${OTOPENGAUSS_LOG_PATH:-/data/otopengauss/log}:/var/log/opengauss:Z
       - ./deploy/opengauss-init:/docker-entrypoint-initdb.d:ro
 
   ot-backend:
