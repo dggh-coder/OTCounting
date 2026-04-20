@@ -34,7 +34,10 @@ cat > opengauss.env <<ENV
 GS_PASSWORD=${GS_PASSWORD}
 OT_USER_DB_USER=${APP_USER}
 OT_USER_DB_PASSWORD=${APP_PASSWORD}
+OTOPENGAUSS_DB_PATH=/data/otopengauss/db
+OTOPENGAUSS_LOG_PATH=/data/otopengauss/log
 GS_DB=postgres
+GAUSSLOG=/var/log/opengauss
 GAUSSHOME=/usr/local/opengauss
 PATH=/usr/local/opengauss/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 LD_LIBRARY_PATH=/usr/local/opengauss/lib

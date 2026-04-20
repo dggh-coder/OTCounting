@@ -48,6 +48,7 @@ cp secrets/ot_db_password.txt.example secrets/ot_db_password.txt
 - `.env` -> also controls host volume paths used by compose (`OTOPENGAUSS_DB_PATH`, `OTOPENGAUSS_LOG_PATH`)
 
 > Note: `podman-compose` volume interpolation reads from shell/`.env`, not from `opengauss.env`.
+> If you want to keep paths in `opengauss.env`, use `./scripts/compose-up.sh` (it loads `opengauss.env` and exports the path variables before calling compose).
 
 DB init user source precedence during first boot:
 
@@ -60,6 +61,9 @@ DB init user source precedence during first boot:
 ```bash
 sudo mkdir -p /data/otopengauss/db /data/otopengauss/log
 podman compose -f podman-compose.yml up --build
+
+# or (loads path variables from opengauss.env)
+./scripts/compose-up.sh up --build
 ```
 
 openGauss data is persisted on host path: `/data/otopengauss/db`.
