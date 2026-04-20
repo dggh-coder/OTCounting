@@ -56,25 +56,37 @@ func (s *Store) SaveCalculation(input engine.CalculateInput, out engine.Calculat
 		if _, ok := sessionSeen[sessionID]; !ok {
 			_, err = tx.Exec(ctx, `
 				INSERT INTO ot_uat.work_session (session_id, session_date, period, status, created_by)
-				VALUES ($1, $2::date, $3, 'OPEN', 'ot-backend')
-				ON CONFLICT (session_id) DO NOTHING
+				SELECT $1, $2::date, $3, 'OPEN', 'ot-backend'
+				WHERE NOT EXISTS (
+					SELECT 1 FROM ot_uat.work_session WHERE session_id = $1
+				)
 			`, sessionID, e.Date, period)
 			if err != nil {
 				return err
 			}
 			sessionSeen[sessionID] = struct{}{}
 		}
-		_, err = tx.Exec(ctx, `
-			INSERT INTO ot_uat.time_entry (id, session_id, employee_id, entry_type, start_time, end_time)
-			VALUES ($1, $2, $3, $4, $5::time, $6::time)
-			ON CONFLICT (id) DO UPDATE SET
-				session_id = excluded.session_id,
-				employee_id = excluded.employee_id,
-				entry_type = excluded.entry_type,
-				start_time = excluded.start_time,
-				end_time = excluded.end_time,
+		updateTag, err := tx.Exec(ctx, `
+			UPDATE ot_uat.time_entry
+			SET
+				session_id = $2,
+				employee_id = $3,
+				entry_type = $4,
+				start_time = $5::time,
+				end_time = $6::time,
 				updated_at = CURRENT_TIMESTAMP
+			WHERE id = $1
 		`, e.ID, sessionID, e.EmployeeID, e.EntryType, e.StartTime, e.EndTime)
+		if err != nil {
+			return err
+		}
+
+		if updateTag.RowsAffected() == 0 {
+			_, err = tx.Exec(ctx, `
+				INSERT INTO ot_uat.time_entry (id, session_id, employee_id, entry_type, start_time, end_time)
+				VALUES ($1, $2, $3, $4, $5::time, $6::time)
+			`, e.ID, sessionID, e.EmployeeID, e.EntryType, e.StartTime, e.EndTime)
+		}
 		if err != nil {
 			return err
 		}
@@ -82,21 +94,31 @@ func (s *Store) SaveCalculation(input engine.CalculateInput, out engine.Calculat
 
 	for emp, bySession := range out.DailySummary {
 		for sessionID, daily := range bySession {
-			_, err = tx.Exec(ctx, `
-				INSERT INTO ot_uat.session_result (
-					session_id, employee_id, date_label, rate20_rounded_hours, rate15_rounded_hours,
-					rate20_minutes, rate15_minutes, calculated_at)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-				ON CONFLICT (session_id, employee_id)
-				DO UPDATE SET
-					date_label = excluded.date_label,
-					rate20_rounded_hours = excluded.rate20_rounded_hours,
-					rate15_rounded_hours = excluded.rate15_rounded_hours,
-					rate20_minutes = excluded.rate20_minutes,
-					rate15_minutes = excluded.rate15_minutes,
-					calculated_at = excluded.calculated_at
+			updateTag, err := tx.Exec(ctx, `
+				UPDATE ot_uat.session_result
+				SET
+					date_label = $3,
+					rate20_rounded_hours = $4,
+					rate15_rounded_hours = $5,
+					rate20_minutes = $6,
+					rate15_minutes = $7,
+					calculated_at = $8
+				WHERE session_id = $1 AND employee_id = $2
 			`, sessionID, emp, daily.DateLabel, daily.Rate20RoundedHours, daily.Rate15RoundedHours,
 				daily.Rate20Minutes, daily.Rate15Minutes, time.Now())
+			if err != nil {
+				return err
+			}
+
+			if updateTag.RowsAffected() == 0 {
+				_, err = tx.Exec(ctx, `
+					INSERT INTO ot_uat.session_result (
+						session_id, employee_id, date_label, rate20_rounded_hours, rate15_rounded_hours,
+						rate20_minutes, rate15_minutes, calculated_at)
+					VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+				`, sessionID, emp, daily.DateLabel, daily.Rate20RoundedHours, daily.Rate15RoundedHours,
+					daily.Rate20Minutes, daily.Rate15Minutes, time.Now())
+			}
 			if err != nil {
 				return err
 			}
