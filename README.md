@@ -42,7 +42,7 @@ cp secrets/ot_db_password.txt.example secrets/ot_db_password.txt
 
 2) Edit configs:
 
-- `opengauss.env` -> set `GS_PASSWORD`, `OT_USER_DB_USER`, `OT_USER_DB_PASSWORD`
+- `opengauss.env` -> set `GS_PASSWORD`, `OT_USER_DB_USER`, `OT_USER_DB_PASSWORD`, `GAUSSLOG=/var/log/opengauss`
 - `secrets/ot_db_password.txt` -> same value as `OT_USER_DB_PASSWORD`
 - `.env` -> non-secret DB host/port/name/user only (`DB_USER` should match `OT_USER_DB_USER`)
 
@@ -55,11 +55,13 @@ DB init user source precedence during first boot:
 3) Start services:
 
 ```bash
-sudo mkdir -p /data/otopengaussdb
+sudo mkdir -p /data/opengauss/db /data/opengauss/log
 podman compose -f podman-compose.yml up --build
 ```
 
-openGauss data is persisted on host path: `/data/otopengaussdb`.
+openGauss data is persisted on host path: `/data/opengauss/db`.
+
+openGauss logs are persisted on host path: `/data/opengauss/log`.
 
 Services:
 
@@ -126,16 +128,16 @@ When the DB volume is fresh, `002_create_ot_user.sh` automatically creates/grant
 It also reassigns ownership of existing `ot_uat` tables to `ot_user` during init so backend writes are not blocked by table-owner mismatches.
 It also sets `ot_user` as owner of schema `ot_uat`.
 
-Important: DB init scripts run only on a **fresh** data directory. If `/data/otopengaussdb` already has data, changing `.env` later will not re-run user creation.
+Important: DB init scripts run only on a **fresh** data directory. If `/data/opengauss/db` already has data, changing `.env` later will not re-run user creation.
 
-If you want permissions/username/password to be auto-ready **at container creation time** with no manual steps, create the DB container with a fresh empty `/data/otopengaussdb` so init scripts execute.
+If you want permissions/username/password to be auto-ready **at container creation time** with no manual steps, create the DB container with a fresh empty `/data/opengauss/db` so init scripts execute.
 
 ### DB users and passwords (quick clarification)
 
 - `omm` is the openGauss initial admin user. Its password is `GS_PASSWORD` from `opengauss.env` **at first initialization time**.
 - `ot_user` is the application user created by `002_create_ot_user.sh` (password defaults to `OT_USER_DB_PASSWORD`, or falls back to `GS_PASSWORD`).
 - `secrets/ot_db_password.txt` is only for backend runtime login password injection; it does not define DB users by itself.
-- Credentials are not stored in this repo after startup; live auth data is inside the DB data directory (`/data/otopengaussdb`).
+- Credentials are not stored in this repo after startup; live auth data is inside the DB data directory (`/data/opengauss/db`).
 - If you change `opengauss.env` later, existing initialized DB credentials do not automatically change.
 
 Check existing DB roles:
@@ -188,11 +190,11 @@ podman logs -f --tail 200 ot-opengauss
 podman exec -it ot-opengauss gsql -h 127.0.0.1 -p 5432 -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "SELECT 1;"
 ```
 
-4) If password/auth still fails after changing `opengauss.env`, you are likely reusing an old DB data directory (`/data/otopengaussdb`) initialized with a different password. Recreate the DB volume for a fresh init:
+4) If password/auth still fails after changing `opengauss.env`, you are likely reusing an old DB data directory (`/data/opengauss/db`) initialized with a different password. Recreate the DB volume for a fresh init:
 
 ```bash
 podman compose -f podman-compose.yml down
-sudo rm -rf /data/otopengaussdb/*
+sudo rm -rf /data/opengauss/db/*
 podman compose -f podman-compose.yml up -d opengauss
 ```
 
