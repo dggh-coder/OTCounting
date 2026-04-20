@@ -1,5 +1,7 @@
 const STORAGE_KEY = "ot-calculator-payload-v2";
-const API_BASE = window.__API_BASE__ || "http://localhost:8080";
+const API_BASE =
+  window.__API_BASE__ ||
+  `${window.location.protocol}//${window.location.hostname || "localhost"}:8080`;
 
 const state = {
   entries: []

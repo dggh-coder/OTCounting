@@ -76,6 +76,8 @@ Services:
 - Backend: http://localhost:8080
 - openGauss: localhost:5432
 
+Frontend API target defaults to the same host as the page (port `8080`), so accessing `http://<server-ip>:8081` will call `http://<server-ip>:8080` automatically.
+
 ## Run backend only (DB already running)
 
 If your openGauss container is already up and initialized, you can start only the backend service:
