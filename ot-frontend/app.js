@@ -1,4 +1,3 @@
-const STORAGE_KEY = "ot-calculator-payload-v2";
 const API_BASE =
   window.__API_BASE__ ||
   "";
@@ -21,36 +20,6 @@ function defaultRow() {
     startTime: "",
     endTime: ""
   };
-}
-
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-function normalizeLegacy(parsed) {
-  if (Array.isArray(parsed.entries)) {
-    return parsed.entries.map((e) => ({ period: "AM", ...e }));
-  }
-
-  const rows = [];
-  if (Array.isArray(parsed.otEntries)) {
-    parsed.otEntries.forEach((e) => rows.push({ period: "AM", ...e, kind: "OT" }));
-  }
-  if (Array.isArray(parsed.breakEntries)) {
-    parsed.breakEntries.forEach((e) => rows.push({ period: "AM", ...e, kind: "BREAK" }));
-  }
-  return rows;
-}
-
-function loadState() {
-  const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("ot-calculator-payload-v1");
-  if (!raw) return;
-  try {
-    const parsed = JSON.parse(raw);
-    state.entries = normalizeLegacy(parsed);
-  } catch {
-    state.entries = [];
-  }
 }
 
 function kindSelect(value) {
@@ -83,7 +52,6 @@ function bindRows(tbodyEl, rows) {
       el.addEventListener("change", async (e) => {
         const field = e.target.dataset.field;
         state.entries[index][field] = e.target.value.trim();
-        saveState();
         await recalculate();
       });
     });
@@ -91,7 +59,6 @@ function bindRows(tbodyEl, rows) {
     tr.querySelector('[data-action="delete"]').addEventListener("click", async () => {
       state.entries.splice(index, 1);
       render();
-      saveState();
       await recalculate();
     });
 
@@ -221,18 +188,15 @@ async function recalculate() {
 }
 
 function init() {
-  loadState();
-  if (state.entries.length === 0) state.entries.push(defaultRow());
+  state.entries.push(defaultRow());
 
   document.getElementById("add-entry").addEventListener("click", async () => {
     state.entries.push(defaultRow());
     render();
-    saveState();
     await recalculate();
   });
 
   render();
-  saveState();
   recalculate();
 }
 
