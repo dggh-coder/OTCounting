@@ -181,6 +181,14 @@ Use this helper when backend logs show errors like `Invalid username/password` (
 
 If logs show both `002_create_ot_app_user.sh` and `002_create_ot_user.sh` running, you likely still have a legacy script file in `deploy/opengauss-init/` on disk. Remove `002_create_ot_app_user.sh` and recreate the DB container with a fresh data directory.
 
+If frontend still shows `syntax error at or near "CONFLICT" (SQLSTATE 42601)`, you are likely running an older backend image. Rebuild and restart backend so the latest SQL compatibility fix is active:
+
+```bash
+podman compose -f podman-compose.yml build ot-backend
+podman compose -f podman-compose.yml up -d ot-backend
+podman logs --tail 100 ot-backend
+```
+
 ## Fix: `failed to connect Unknown:5432`
 
 This usually means openGauss is not fully ready yet, or `GS_PASSWORD` does not match the initialized DB volume.
