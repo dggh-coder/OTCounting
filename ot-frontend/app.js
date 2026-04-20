@@ -1,7 +1,7 @@
 const STORAGE_KEY = "ot-calculator-payload-v2";
 const API_BASE =
   window.__API_BASE__ ||
-  `${window.location.protocol}//${window.location.hostname || "localhost"}:8080`;
+  "";
 
 const state = {
   entries: []
@@ -202,7 +202,8 @@ function renderMonthly(data) {
 
 async function recalculate() {
   try {
-    const resp = await fetch(`${API_BASE}/api/calculate`, {
+    const calculateURL = API_BASE ? `${API_BASE}/api/calculate` : "/api/calculate";
+    const resp = await fetch(calculateURL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(toPayload())

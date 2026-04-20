@@ -76,7 +76,7 @@ Services:
 - Backend: http://localhost:8080
 - openGauss: localhost:5432
 
-Frontend API target defaults to the same host as the page (port `8080`), so accessing `http://<server-ip>:8081` will call `http://<server-ip>:8080` automatically.
+Frontend calls `/api/*` on the frontend origin and nginx proxies those requests to `ot-backend:8080`, so browser-side cross-origin issues are avoided.
 
 ## Run backend only (DB already running)
 
