@@ -76,7 +76,7 @@ Services:
 - Backend: http://localhost:8080
 - openGauss: localhost:5432
 
-Frontend calls `/api/*` on the frontend origin and nginx proxies those requests to `ot-backend:8080`, so browser-side cross-origin issues are avoided.
+Frontend calls `/api/*` on the frontend origin and nginx proxies those requests to backend via `host.containers.internal:8080`, so browser-side cross-origin issues are avoided.
 
 ## Run backend only (DB already running)
 
