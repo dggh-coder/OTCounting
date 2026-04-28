@@ -255,7 +255,6 @@ function renderProcessTexts(rows) {
       root.appendChild(card);
     });
   });
-}
 
 async function loadProcessTexts() {
   const staffid = document.getElementById("process-staff-filter").value;
