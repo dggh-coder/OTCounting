@@ -74,8 +74,8 @@ async function saveStaff() {
   const namechi = document.getElementById("staff-namechi").value.trim();
   const displayname = document.getElementById("staff-displayname").value.trim();
   const domainname = document.getElementById("staff-domainname").value.trim();
-  if (!staffid || !nameeng || !namechi || !displayname || !domainname) {
-    msg.textContent = "All staff fields are required.";
+  if (!staffid) {
+    msg.textContent = "Staff No (ID) is required.";
     return;
   }
 

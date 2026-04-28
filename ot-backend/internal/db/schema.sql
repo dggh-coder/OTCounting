@@ -4,11 +4,16 @@ CREATE SCHEMA IF NOT EXISTS otdriverstd;
 CREATE TABLE IF NOT EXISTS staffinfo.staffinfo (
     id           BIGSERIAL PRIMARY KEY,
     staffid      VARCHAR(64) UNIQUE NOT NULL,
-    nameeng      VARCHAR(255) NOT NULL,
-    namechi      VARCHAR(255) NOT NULL,
-    displayname  VARCHAR(255) NOT NULL,
-    domainname   VARCHAR(255) NOT NULL
+    nameeng      VARCHAR(255),
+    namechi      VARCHAR(255),
+    displayname  VARCHAR(255),
+    domainname   VARCHAR(255)
 );
+
+ALTER TABLE staffinfo.staffinfo ALTER COLUMN nameeng DROP NOT NULL;
+ALTER TABLE staffinfo.staffinfo ALTER COLUMN namechi DROP NOT NULL;
+ALTER TABLE staffinfo.staffinfo ALTER COLUMN displayname DROP NOT NULL;
+ALTER TABLE staffinfo.staffinfo ALTER COLUMN domainname DROP NOT NULL;
 
 CREATE TABLE IF NOT EXISTS otdriverstd.otperiod (
     id         BIGSERIAL PRIMARY KEY,

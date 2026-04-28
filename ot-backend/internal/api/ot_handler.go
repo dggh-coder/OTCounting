@@ -153,8 +153,8 @@ func (h *OTHandler) StaffInput(w http.ResponseWriter, r *http.Request) {
 	req.NameChi = strings.TrimSpace(req.NameChi)
 	req.DisplayName = strings.TrimSpace(req.DisplayName)
 	req.DomainName = strings.TrimSpace(req.DomainName)
-	if req.StaffID == "" || req.NameEng == "" || req.NameChi == "" || req.DisplayName == "" || req.DomainName == "" {
-		http.Error(w, "staffid, nameeng, namechi, displayname, domainname are required", http.StatusBadRequest)
+	if req.StaffID == "" {
+		http.Error(w, "staffid is required", http.StatusBadRequest)
 		return
 	}
 

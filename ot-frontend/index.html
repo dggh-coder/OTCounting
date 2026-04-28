@@ -65,19 +65,20 @@
             <input id="staff-id" type="text" placeholder="e.g. S1001">
           </label>
           <label>Staff Name (Eng)
-            <input id="staff-nameeng" type="text" placeholder="e.g. Chan Tai Man">
+            <input id="staff-nameeng" type="text" placeholder="optional">
           </label>
           <label>Staff Name (Chi)
-            <input id="staff-namechi" type="text" placeholder="e.g. 陳大文">
+            <input id="staff-namechi" type="text" placeholder="optional">
           </label>
           <label>Display Name
-            <input id="staff-displayname" type="text" placeholder="e.g. Michael">
+            <input id="staff-displayname" type="text" placeholder="optional">
           </label>
           <label>Domain Name
-            <input id="staff-domainname" type="text" placeholder="e.g. michael.chan">
+            <input id="staff-domainname" type="text" placeholder="optional">
           </label>
           <button id="save-staff" type="button">Save Staff</button>
         </div>
+        <p class="hint">Only Staff No is required. If your DB still has NOT NULL on other columns, run latest schema init/migration first.</p>
         <div id="staff-msg" class="msg"></div>
       </section>
       <section class="card">
