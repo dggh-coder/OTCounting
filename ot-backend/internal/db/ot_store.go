@@ -18,6 +18,38 @@ type Staff struct {
 	DomainName  string `json:"domainname"`
 }
 
+func (s *Store) UpsertStaff(ctx context.Context, staffNo, staffCode string) (Staff, error) {
+	updateTag, err := s.pool.Exec(ctx, `
+		UPDATE staffinfo.staffinfo
+		SET domainname = $2,
+		    displayname = $1,
+		    nameeng = $1,
+		    namechi = $1
+		WHERE staffid = $1
+	`, staffNo, staffCode)
+	if err != nil {
+		return Staff{}, err
+	}
+	if updateTag.RowsAffected() == 0 {
+		if _, err := s.pool.Exec(ctx, `
+			INSERT INTO staffinfo.staffinfo (staffid, nameeng, namechi, displayname, domainname)
+			VALUES ($1, $1, $1, $1, $2)
+		`, staffNo, staffCode); err != nil {
+			return Staff{}, err
+		}
+	}
+
+	var out Staff
+	if err := s.pool.QueryRow(ctx, `
+		SELECT staffid, nameeng, namechi, displayname, domainname
+		FROM staffinfo.staffinfo
+		WHERE staffid = $1
+	`, staffNo).Scan(&out.StaffID, &out.NameEng, &out.NameChi, &out.DisplayName, &out.DomainName); err != nil {
+		return Staff{}, err
+	}
+	return out, nil
+}
+
 type EntryInput struct {
 	Type      string  `json:"type"`
 	StartTime string  `json:"startTime"`

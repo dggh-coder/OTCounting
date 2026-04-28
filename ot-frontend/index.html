@@ -8,47 +8,73 @@
 </head>
 <body>
   <main>
-    <h1>OT Input</h1>
+    <h1>OT Management</h1>
+    <nav class="tabs">
+      <button id="tab-btn-ot" class="tab-btn active" data-tab="ot" type="button">OT Input</button>
+      <button id="tab-btn-staff" class="tab-btn" data-tab="staff" type="button">Staff Input</button>
+    </nav>
 
-    <section id="step-select" class="card">
-      <h2>1) Select Staff + Date</h2>
-      <div class="row">
-        <label>Staff
-          <select id="staff-select"></select>
-        </label>
-        <label>Date
-          <input id="work-date" type="date">
-        </label>
-        <button id="to-period" type="button">Next</button>
-      </div>
-      <div id="select-msg" class="msg"></div>
+    <section id="tab-ot" class="tab-content">
+      <section id="step-select" class="card">
+        <h2>1) Select Staff + Date</h2>
+        <div class="row">
+          <label>Staff
+            <select id="staff-select"></select>
+          </label>
+          <label>Date
+            <input id="work-date" type="date">
+          </label>
+          <button id="to-period" type="button">Next</button>
+        </div>
+        <div id="select-msg" class="msg"></div>
+      </section>
+  
+      <section id="step-period" class="card hidden">
+        <h2>2) Select Period</h2>
+        <div class="periods">
+          <button data-period="00" type="button">Morning (早)</button>
+          <button data-period="01" type="button">Noon (中)</button>
+          <button data-period="02" type="button">Evening (晚)</button>
+        </div>
+        <button id="back-select" type="button">Back</button>
+      </section>
+  
+      <section id="step-input" class="card hidden">
+        <h2>3) Input Details</h2>
+        <div id="context"></div>
+        <button id="add-row" type="button">Add Row</button>
+        <table>
+          <thead>
+            <tr><th>Type</th><th>Start (HH:MM)</th><th>End (HH:MM)</th><th>Input By</th><th></th></tr>
+          </thead>
+          <tbody id="entry-body"></tbody>
+        </table>
+        <div class="actions">
+          <button id="confirm" type="button">確認 Confirm</button>
+          <button id="cancel-input" type="button">Cancel</button>
+        </div>
+        <div id="input-msg" class="msg"></div>
+      </section>
     </section>
 
-    <section id="step-period" class="card hidden">
-      <h2>2) Select Period</h2>
-      <div class="periods">
-        <button data-period="00" type="button">Morning (早)</button>
-        <button data-period="01" type="button">Noon (中)</button>
-        <button data-period="02" type="button">Evening (晚)</button>
-      </div>
-      <button id="back-select" type="button">Back</button>
-    </section>
-
-    <section id="step-input" class="card hidden">
-      <h2>3) Input Details</h2>
-      <div id="context"></div>
-      <button id="add-row" type="button">Add Row</button>
-      <table>
-        <thead>
-          <tr><th>Type</th><th>Start (HH:MM)</th><th>End (HH:MM)</th><th>Input By</th><th></th></tr>
-        </thead>
-        <tbody id="entry-body"></tbody>
-      </table>
-      <div class="actions">
-        <button id="confirm" type="button">確認 Confirm</button>
-        <button id="cancel-input" type="button">Cancel</button>
-      </div>
-      <div id="input-msg" class="msg"></div>
+    <section id="tab-staff" class="tab-content hidden">
+      <section class="card">
+        <h2>Staff Input</h2>
+        <div class="row">
+          <label>Staff No
+            <input id="staff-no" type="text" placeholder="e.g. S1001">
+          </label>
+          <label>Staff Code
+            <input id="staff-code" type="text" placeholder="e.g. OT-ENG-01">
+          </label>
+          <button id="save-staff" type="button">Save Staff</button>
+        </div>
+        <div id="staff-msg" class="msg"></div>
+      </section>
+      <section class="card">
+        <h2>Current Staff</h2>
+        <div id="staff-list"></div>
+      </section>
     </section>
   </main>
   <script src="./app.js"></script>

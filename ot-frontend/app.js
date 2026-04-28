@@ -22,6 +22,29 @@ function formatPeriodLabel(p) {
   return "Evening (晚)";
 }
 
+function switchTab(tabName) {
+  const isOT = tabName === "ot";
+  document.getElementById("tab-ot").classList.toggle("hidden", !isOT);
+  document.getElementById("tab-staff").classList.toggle("hidden", isOT);
+  document.getElementById("tab-btn-ot").classList.toggle("active", isOT);
+  document.getElementById("tab-btn-staff").classList.toggle("active", !isOT);
+}
+
+function renderStaffList() {
+  const root = document.getElementById("staff-list");
+  root.innerHTML = "";
+  if (state.staff.length === 0) {
+    root.textContent = "No staff found.";
+    return;
+  }
+  state.staff.forEach((s) => {
+    const div = document.createElement("div");
+    div.className = "staff-item";
+    div.textContent = `No: ${s.staffid} | Code: ${s.domainname}`;
+    root.appendChild(div);
+  });
+}
+
 async function loadStaff() {
   const select = document.getElementById("staff-select");
   select.innerHTML = "<option value=''>-- Select --</option>";
@@ -32,13 +55,41 @@ async function loadStaff() {
     state.staff.forEach((s) => {
       const opt = document.createElement("option");
       opt.value = s.staffid;
-      opt.textContent = `${s.displayname} (${s.staffid})`;
+      opt.textContent = `${s.staffid} (${s.domainname})`;
       select.appendChild(opt);
     });
+    renderStaffList();
   } catch {
     const msg = document.getElementById("select-msg");
     msg.textContent = "Cannot load staff list.";
   }
+}
+
+async function saveStaff() {
+  const msg = document.getElementById("staff-msg");
+  msg.textContent = "";
+  const staffNo = document.getElementById("staff-no").value.trim();
+  const staffCode = document.getElementById("staff-code").value.trim();
+  if (!staffNo || !staffCode) {
+    msg.textContent = "Staff No and Staff Code are required.";
+    return;
+  }
+
+  const resp = await fetch(endpoint("/api/staff/input"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ staffNo, staffCode })
+  });
+  if (!resp.ok) {
+    msg.textContent = await resp.text();
+    return;
+  }
+
+  document.getElementById("staff-no").value = "";
+  document.getElementById("staff-code").value = "";
+  msg.style.color = "#0a7a2f";
+  msg.textContent = "Staff saved.";
+  await loadStaff();
 }
 
 function renderRows() {
@@ -112,6 +163,10 @@ async function confirmInput() {
 }
 
 function bindEvents() {
+  document.getElementById("tab-btn-ot").addEventListener("click", () => switchTab("ot"));
+  document.getElementById("tab-btn-staff").addEventListener("click", () => switchTab("staff"));
+  document.getElementById("save-staff").addEventListener("click", saveStaff);
+
   document.getElementById("to-period").addEventListener("click", () => {
     state.selectedStaff = document.getElementById("staff-select").value;
     state.date = document.getElementById("work-date").value;
@@ -147,6 +202,7 @@ function init() {
   bindEvents();
   loadStaff();
   showStep("step-select");
+  switchTab("ot");
 }
 
 document.addEventListener("DOMContentLoaded", init);

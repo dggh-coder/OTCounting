@@ -24,6 +24,11 @@ type inputRequest struct {
 	Entries   []db.EntryInput `json:"entries"`
 }
 
+type staffInputRequest struct {
+	StaffNo   string `json:"staffNo"`
+	StaffCode string `json:"staffCode"`
+}
+
 func (h *OTHandler) Input(w http.ResponseWriter, r *http.Request) {
 	setJSON(w)
 	if r.Method == http.MethodOptions {
@@ -107,6 +112,10 @@ func (h *OTHandler) Monthly(w http.ResponseWriter, r *http.Request) {
 
 func (h *OTHandler) Staff(w http.ResponseWriter, r *http.Request) {
 	setJSON(w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -117,6 +126,38 @@ func (h *OTHandler) Staff(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = json.NewEncoder(w).Encode(map[string]any{"staff": staff})
+}
+
+func (h *OTHandler) StaffInput(w http.ResponseWriter, r *http.Request) {
+	setJSON(w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	defer r.Body.Close()
+
+	var req staffInputRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid json", http.StatusBadRequest)
+		return
+	}
+	req.StaffNo = strings.TrimSpace(req.StaffNo)
+	req.StaffCode = strings.TrimSpace(req.StaffCode)
+	if req.StaffNo == "" || req.StaffCode == "" {
+		http.Error(w, "staffNo and staffCode are required", http.StatusBadRequest)
+		return
+	}
+
+	saved, err := h.Store.UpsertStaff(r.Context(), req.StaffNo, req.StaffCode)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	_ = json.NewEncoder(w).Encode(map[string]any{"staff": saved})
 }
 
 func setJSON(w http.ResponseWriter) {

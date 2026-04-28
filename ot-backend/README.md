@@ -20,6 +20,7 @@ Server listens on `:8080` and exposes:
 - `GET /api/ot/entries`
 - `GET /api/ot/monthly`
 - `GET /api/staff`
+- `POST /api/staff/input`
 - `GET /healthz`
 
 On startup it initializes openGauss schema from embedded `internal/db/schema.sql`.
