@@ -264,6 +264,14 @@ async function loadProcessTexts() {
   renderProcessTexts(data.rows || []);
 }
 
+async function loadProcessTexts() {
+  const staffid = document.getElementById("process-staff-filter").value;
+  const url = staffid ? endpoint(`/api/ot/process-texts?otstaffid=${encodeURIComponent(staffid)}`) : endpoint("/api/ot/process-texts");
+  const resp = await fetch(url);
+  const data = await resp.json();
+  renderProcessTexts(data.rows || []);
+}
+
 function bindEvents() {
   document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -274,10 +282,17 @@ function bindEvents() {
       }
     });
   });
-  document.getElementById("save-staff")?.addEventListener("click", saveStaff);
-  document.getElementById("refresh-process")?.addEventListener("click", loadProcessTexts);
+  const saveStaffBtn = document.getElementById("save-staff");
+  if (saveStaffBtn) {
+    saveStaffBtn.addEventListener("click", saveStaff);
+  }
+  const refreshProcessBtn = document.getElementById("refresh-process");
+  if (refreshProcessBtn) {
+    refreshProcessBtn.addEventListener("click", loadProcessTexts);
+  }
 
-  document.getElementById("to-period")?.addEventListener("click", async () => {
+  const toPeriodBtn = document.getElementById("to-period");
+  if (toPeriodBtn) toPeriodBtn.addEventListener("click", async () => {
     state.selectedStaff = document.getElementById("staff-select").value;
     state.date = document.getElementById("work-date").value;
     if (!state.selectedStaff || !state.date) {
@@ -292,12 +307,15 @@ function bindEvents() {
     showStep("step-input");
   });
 
-  document.getElementById("add-row")?.addEventListener("click", () => {
+  const addRowBtn = document.getElementById("add-row");
+  if (addRowBtn) addRowBtn.addEventListener("click", () => {
     state.rows.push(rowTemplate());
     renderRows();
   });
-  document.getElementById("cancel-input")?.addEventListener("click", () => resetToStart());
-  document.getElementById("confirm")?.addEventListener("click", confirmInput);
+  const cancelInputBtn = document.getElementById("cancel-input");
+  if (cancelInputBtn) cancelInputBtn.addEventListener("click", () => resetToStart());
+  const confirmBtn = document.getElementById("confirm");
+  if (confirmBtn) confirmBtn.addEventListener("click", confirmInput);
 }
 
 function init() {
