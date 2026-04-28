@@ -3,35 +3,102 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OT Calculator</title>
+  <title>OT Input</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
   <main>
-    <h1>OT Calculator (UAT)</h1>
+    <h1>OT Management</h1>
+    <nav class="tabs">
+      <button id="tab-btn-ot" class="tab-btn active" data-tab="ot" type="button">OT Input</button>
+      <button id="tab-btn-staff" class="tab-btn" data-tab="staff" type="button">Staff Input</button>
+      <button id="tab-btn-process" class="tab-btn" data-tab="process" type="button">Process Texts</button>
+    </nav>
 
-    <section>
-      <h2>Entries (OT + Break)</h2>
-      <button id="add-entry" type="button">Add Entry</button>
-      <table>
-        <thead>
-          <tr><th>Date</th><th>Session</th><th>Type</th><th>Employee</th><th>Start (24h)</th><th>End (24h)</th><th>Action</th></tr>
-        </thead>
-        <tbody id="entry-body"></tbody>
-      </table>
+    <section id="tab-ot" class="tab-content">
+      <section id="step-select" class="card">
+        <h2>1) Select Staff + Date</h2>
+        <div class="row">
+          <label>Staff
+            <select id="staff-select"></select>
+          </label>
+          <label>Date
+            <input id="work-date" type="date">
+          </label>
+          <button id="to-period" type="button">Next</button>
+        </div>
+        <div id="select-msg" class="msg"></div>
+      </section>
+
+      <section id="step-input" class="card hidden">
+        <h2>2) Input Details</h2>
+        <div id="context"></div>
+        <h3>Existing Records (Read-only, can delete)</h3>
+        <table>
+          <thead>
+            <tr><th>Type</th><th>Start (HH:MM)</th><th>End (HH:MM)</th><th></th></tr>
+          </thead>
+          <tbody id="existing-body"></tbody>
+        </table>
+        <h3>New Records</h3>
+        <button id="add-row" type="button">Add Row</button>
+        <table>
+          <thead>
+            <tr><th>Type</th><th>Start (HH:MM)</th><th>End (HH:MM)</th><th></th></tr>
+          </thead>
+          <tbody id="entry-body"></tbody>
+        </table>
+        <div class="actions">
+          <button id="confirm" type="button">確認 Confirm</button>
+          <button id="cancel-input" type="button">Back</button>
+        </div>
+        <div id="input-msg" class="msg"></div>
+      </section>
     </section>
 
-    <section>
-      <h2>Daily Summary</h2>
-      <div id="daily-results"></div>
+    <section id="tab-staff" class="tab-content hidden">
+      <section class="card">
+        <h2>Staff Input</h2>
+        <div class="row">
+          <label>Staff No (ID)
+            <input id="staff-id" type="text" placeholder="e.g. S1001">
+          </label>
+          <label>Staff Name (Eng)
+            <input id="staff-nameeng" type="text" placeholder="optional">
+          </label>
+          <label>Staff Name (Chi)
+            <input id="staff-namechi" type="text" placeholder="optional">
+          </label>
+          <label>Display Name
+            <input id="staff-displayname" type="text" placeholder="optional">
+          </label>
+          <label>Domain Name
+            <input id="staff-domainname" type="text" placeholder="optional">
+          </label>
+          <button id="save-staff" type="button">Save Staff</button>
+        </div>
+        <p class="hint">Only Staff No is required. If your DB still has NOT NULL on other columns, run latest schema init/migration first.</p>
+        <div id="staff-msg" class="msg"></div>
+      </section>
+      <section class="card">
+        <h2>Current Staff</h2>
+        <div id="staff-list"></div>
+      </section>
     </section>
 
-    <section>
-      <h2>Monthly Summary</h2>
-      <div id="monthly-results"></div>
+    <section id="tab-process" class="tab-content hidden">
+      <section class="card">
+        <h2>Process Texts</h2>
+        <div class="row">
+          <label>Filter Staff
+            <select id="process-staff-filter"></select>
+          </label>
+          <button id="refresh-process" type="button">Refresh</button>
+        </div>
+        <div id="process-root"></div>
+      </section>
     </section>
   </main>
-
   <script src="./app.js"></script>
 </body>
 </html>
