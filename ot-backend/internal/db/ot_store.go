@@ -151,8 +151,10 @@ func getEntriesByFilters(ctx context.Context, q interface {
 	Query(context.Context, string, ...any) (pgx.Rows, error)
 }, otstaffid, date, period string) ([]SavedEntry, error) {
 	rows, err := q.Query(ctx, `
-		SELECT d.id, d.otid, p.otstaffid, to_char(p.date, 'YYYY-MM-DD'), p.period, d.type,
-		       to_char(d.starttime, 'HH24:MI'), to_char(d.endtime, 'HH24:MI'), d.inputby
+			SELECT d.id, d.otid, p.otstaffid, to_char(p.date, 'YYYY-MM-DD'), p.period, d.type,
+			       regexp_substr(d.starttime::text, '[0-9]{2}:[0-9]{2}') AS start_hhmm,
+			       regexp_substr(d.endtime::text, '[0-9]{2}:[0-9]{2}') AS end_hhmm,
+			       d.inputby
 		FROM otdriverstd.otdetails d
 		JOIN otdriverstd.otperiod p ON p.id = d.otid
 		WHERE ($1 = '' OR p.otstaffid = $1)
