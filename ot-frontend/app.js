@@ -255,6 +255,13 @@ function renderProcessTexts(rows) {
       root.appendChild(card);
     });
   });
+
+async function loadProcessTexts() {
+  const staffid = document.getElementById("process-staff-filter").value;
+  const url = staffid ? endpoint(`/api/ot/process-texts?otstaffid=${encodeURIComponent(staffid)}`) : endpoint("/api/ot/process-texts");
+  const resp = await fetch(url);
+  const data = await resp.json();
+  renderProcessTexts(data.rows || []);
 }
 
 async function loadProcessTexts() {
