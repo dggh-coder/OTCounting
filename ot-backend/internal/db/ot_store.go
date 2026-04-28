@@ -152,8 +152,8 @@ func getEntriesByFilters(ctx context.Context, q interface {
 }, otstaffid, date, period string) ([]SavedEntry, error) {
 	rows, err := q.Query(ctx, `
 			SELECT d.id, d.otid, p.otstaffid, to_char(p.date, 'YYYY-MM-DD'), p.period, d.type,
-			       regexp_substr(d.starttime::text, '[0-9]{2}:[0-9]{2}') AS start_hhmm,
-			       regexp_substr(d.endtime::text, '[0-9]{2}:[0-9]{2}') AS end_hhmm,
+			       to_char(d.starttime::time, 'HH24:MI') AS start_hhmm,
+			       to_char(d.endtime::time, 'HH24:MI') AS end_hhmm,
 			       d.inputby
 		FROM otdriverstd.otdetails d
 		JOIN otdriverstd.otperiod p ON p.id = d.otid
