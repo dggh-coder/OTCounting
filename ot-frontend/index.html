@@ -3,35 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OT Calculator</title>
+  <title>OT Input</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
   <main>
-    <h1>OT Calculator (UAT)</h1>
+    <h1>OT Input</h1>
 
-    <section>
-      <h2>Entries (OT + Break)</h2>
-      <button id="add-entry" type="button">Add Entry</button>
+    <section id="step-select" class="card">
+      <h2>1) Select Staff + Date</h2>
+      <div class="row">
+        <label>Staff
+          <select id="staff-select"></select>
+        </label>
+        <label>Date
+          <input id="work-date" type="date">
+        </label>
+        <button id="to-period" type="button">Next</button>
+      </div>
+      <div id="select-msg" class="msg"></div>
+    </section>
+
+    <section id="step-period" class="card hidden">
+      <h2>2) Select Period</h2>
+      <div class="periods">
+        <button data-period="00" type="button">Morning (早)</button>
+        <button data-period="01" type="button">Noon (中)</button>
+        <button data-period="02" type="button">Evening (晚)</button>
+      </div>
+      <button id="back-select" type="button">Back</button>
+    </section>
+
+    <section id="step-input" class="card hidden">
+      <h2>3) Input Details</h2>
+      <div id="context"></div>
+      <button id="add-row" type="button">Add Row</button>
       <table>
         <thead>
-          <tr><th>Date</th><th>Session</th><th>Type</th><th>Employee</th><th>Start (24h)</th><th>End (24h)</th><th>Action</th></tr>
+          <tr><th>Type</th><th>Start (HH:MM)</th><th>End (HH:MM)</th><th>Input By</th><th></th></tr>
         </thead>
         <tbody id="entry-body"></tbody>
       </table>
-    </section>
-
-    <section>
-      <h2>Daily Summary</h2>
-      <div id="daily-results"></div>
-    </section>
-
-    <section>
-      <h2>Monthly Summary</h2>
-      <div id="monthly-results"></div>
+      <div class="actions">
+        <button id="confirm" type="button">確認 Confirm</button>
+        <button id="cancel-input" type="button">Cancel</button>
+      </div>
+      <div id="input-msg" class="msg"></div>
     </section>
   </main>
-
   <script src="./app.js"></script>
 </body>
 </html>
