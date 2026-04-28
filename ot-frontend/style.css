@@ -8,8 +8,6 @@ main { max-width: 980px; margin: 0 auto; padding: 1rem; }
 .row { display: flex; gap: 0.8rem; align-items: end; flex-wrap: wrap; }
 label { display: flex; flex-direction: column; gap: 0.2rem; }
 button { padding: 0.4rem 0.8rem; cursor: pointer; }
-.periods { display: flex; gap: 0.8rem; margin-bottom: 1rem; }
-.periods button { flex: 1; font-size: 1rem; }
 table { width: 100%; border-collapse: collapse; margin: 0.8rem 0; }
 th, td { border: 1px solid #ddd; padding: 0.5rem; }
 .msg { color: #b00020; min-height: 1.2rem; }
@@ -17,3 +15,4 @@ th, td { border: 1px solid #ddd; padding: 0.5rem; }
 .actions { display: flex; gap: 0.6rem; }
 #context { font-weight: bold; margin-bottom: 0.6rem; }
 #staff-list .staff-item { padding: 0.4rem 0; border-bottom: 1px solid #eee; }
+.day-card { border: 1px solid #ddd; padding: 0.6rem; margin: 0.5rem 0; background: #fafafa; }

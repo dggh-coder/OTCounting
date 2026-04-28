@@ -77,6 +77,13 @@ type MonthlyTotal struct {
 	TotalHrs15 int `json:"totalhrs15"`
 }
 
+type ProcessTextRow struct {
+	OTStaffID    string `json:"otstaffid"`
+	DateLabel    string `json:"date_label"`
+	Process20Txt string `json:"process20txt"`
+	Process15Txt string `json:"process15txt"`
+}
+
 func (s *Store) ListStaff(ctx context.Context) ([]Staff, error) {
 	rows, err := s.pool.Query(ctx, `SELECT staffid, nameeng, namechi, displayname, domainname FROM staffinfo.staffinfo ORDER BY displayname, staffid`)
 	if err != nil {
@@ -187,6 +194,59 @@ func (s *Store) GetMonthlyTotals(ctx context.Context, year int, month int) ([]Mo
 		out = append(out, r)
 	}
 	return out, rows.Err()
+}
+
+func (s *Store) GetProcessTexts(ctx context.Context, otstaffid string) ([]ProcessTextRow, error) {
+	query := `
+		SELECT otstaffid, to_char(date_label, 'YYYY-MM-DD') AS date_label, process20txt, process15txt
+		FROM otdriverstd.periodresult
+		WHERE ($1 = '' AND date_label >= (CURRENT_DATE - INTERVAL '10 day'))
+		   OR ($1 <> '' AND otstaffid = $1)
+		ORDER BY otstaffid, date_label DESC, id
+	`
+	rows, err := s.pool.Query(ctx, query, otstaffid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := []ProcessTextRow{}
+	for rows.Next() {
+		var r ProcessTextRow
+		if err := rows.Scan(&r.OTStaffID, &r.DateLabel, &r.Process20Txt, &r.Process15Txt); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
+func (s *Store) DeleteEntryAndRebuild(ctx context.Context, detailID int64) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	var otid int64
+	var otstaffid, date, period string
+	err = tx.QueryRow(ctx, `
+		SELECT p.id, p.otstaffid, to_char(p.date, 'YYYY-MM-DD'), p.period
+		FROM otdriverstd.otdetails d
+		JOIN otdriverstd.otperiod p ON p.id = d.otid
+		WHERE d.id = $1
+	`, detailID).Scan(&otid, &otstaffid, &date, &period)
+	if err != nil {
+		return err
+	}
+
+	if _, err := tx.Exec(ctx, `DELETE FROM otdriverstd.otdetails WHERE id = $1`, detailID); err != nil {
+		return err
+	}
+	if err := s.rebuildPeriodResultTx(ctx, tx, otid, otstaffid, date, period); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 func (s *Store) rebuildPeriodResultTx(ctx context.Context, tx pgx.Tx, periodID int64, otstaffid, date, period string) error {

@@ -36,6 +36,8 @@ func main() {
 	mux.HandleFunc("/api/ot/input", otHandler.Input)
 	mux.HandleFunc("/api/ot/entries", otHandler.Get)
 	mux.HandleFunc("/api/ot/monthly", otHandler.Monthly)
+	mux.HandleFunc("/api/ot/entry", otHandler.DeleteEntry)
+	mux.HandleFunc("/api/ot/process-texts", otHandler.ProcessTexts)
 	mux.HandleFunc("/api/staff", otHandler.Staff)
 	mux.HandleFunc("/api/staff/input", otHandler.StaffInput)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })

@@ -139,6 +139,40 @@ func (h *OTHandler) Monthly(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]any{"totals": rows})
 }
 
+func (h *OTHandler) ProcessTexts(w http.ResponseWriter, r *http.Request) {
+	setJSON(w)
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	otstaffid := strings.TrimSpace(r.URL.Query().Get("otstaffid"))
+	rows, err := h.Store.GetProcessTexts(r.Context(), otstaffid)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	_ = json.NewEncoder(w).Encode(map[string]any{"rows": rows})
+}
+
+func (h *OTHandler) DeleteEntry(w http.ResponseWriter, r *http.Request) {
+	setJSON(w)
+	if r.Method != http.MethodDelete {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	idRaw := strings.TrimSpace(r.URL.Query().Get("id"))
+	id, err := strconv.ParseInt(idRaw, 10, 64)
+	if err != nil || id <= 0 {
+		http.Error(w, "valid id is required", http.StatusBadRequest)
+		return
+	}
+	if err := h.Store.DeleteEntryAndRebuild(r.Context(), id); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	_ = json.NewEncoder(w).Encode(map[string]any{"deleted": id})
+}
+
 func (h *OTHandler) Staff(w http.ResponseWriter, r *http.Request) {
 	setJSON(w)
 	if r.Method == http.MethodOptions {

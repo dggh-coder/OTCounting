@@ -12,6 +12,7 @@
     <nav class="tabs">
       <button id="tab-btn-ot" class="tab-btn active" data-tab="ot" type="button">OT Input</button>
       <button id="tab-btn-staff" class="tab-btn" data-tab="staff" type="button">Staff Input</button>
+      <button id="tab-btn-process" class="tab-btn" data-tab="process" type="button">Process Texts</button>
     </nav>
 
     <section id="tab-ot" class="tab-content">
@@ -32,6 +33,14 @@
       <section id="step-input" class="card hidden">
         <h2>2) Input Details</h2>
         <div id="context"></div>
+        <h3>Existing Records (Read-only, can delete)</h3>
+        <table>
+          <thead>
+            <tr><th>Type</th><th>Start (HH:MM)</th><th>End (HH:MM)</th><th></th></tr>
+          </thead>
+          <tbody id="existing-body"></tbody>
+        </table>
+        <h3>New Records</h3>
         <button id="add-row" type="button">Add Row</button>
         <table>
           <thead>
@@ -74,6 +83,19 @@
       <section class="card">
         <h2>Current Staff</h2>
         <div id="staff-list"></div>
+      </section>
+    </section>
+
+    <section id="tab-process" class="tab-content hidden">
+      <section class="card">
+        <h2>Process Texts</h2>
+        <div class="row">
+          <label>Filter Staff
+            <select id="process-staff-filter"></select>
+          </label>
+          <button id="refresh-process" type="button">Refresh</button>
+        </div>
+        <div id="process-root"></div>
       </section>
     </section>
   </main>
