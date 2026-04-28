@@ -17,7 +17,7 @@ function rowTemplate() {
 }
 
 function switchTab(tabName) {
-  const names = ["ot", "staff", "process"];
+  const names = ["ot", "staff"];
   names.forEach((n) => {
     const section = document.getElementById(`tab-${n}`);
     const button = document.getElementById(`tab-btn-${n}`);
@@ -43,9 +43,7 @@ function renderStaffList() {
 
 function fillStaffSelects() {
   const otSelect = document.getElementById("staff-select");
-  const processSelect = document.getElementById("process-staff-filter");
   if (otSelect) otSelect.innerHTML = "<option value=''>-- Select --</option>";
-  if (processSelect) processSelect.innerHTML = "<option value=''>All Staff (last 10 days)</option>";
 
   state.staff.forEach((s) => {
     if (otSelect) {
@@ -53,12 +51,6 @@ function fillStaffSelects() {
       opt1.value = s.staffid;
       opt1.textContent = `${s.displayname || s.staffid} (${s.staffid})`;
       otSelect.appendChild(opt1);
-    }
-    if (processSelect) {
-      const opt2 = document.createElement("option");
-      opt2.value = s.staffid;
-      opt2.textContent = `${s.displayname || s.staffid} (${s.staffid})`;
-      processSelect.appendChild(opt2);
     }
   });
 }
@@ -223,76 +215,19 @@ async function confirmInput() {
   msg.textContent = "Confirmed and recalculated.";
 }
 
-function renderProcessTexts(rows) {
-  const root = document.getElementById("process-root");
-  root.innerHTML = "";
-  if (!rows.length) {
-    root.textContent = "No process text rows.";
-    return;
-  }
-
-  const grouped = {};
-  rows.forEach((r) => {
-    if (!grouped[r.otstaffid]) grouped[r.otstaffid] = {};
-    if (!grouped[r.otstaffid][r.date_label]) grouped[r.otstaffid][r.date_label] = [];
-    grouped[r.otstaffid][r.date_label].push(r);
-  });
-
-  Object.keys(grouped).sort().forEach((staffid) => {
-    const h3 = document.createElement("h3");
-    h3.textContent = `Staff ${staffid}`;
-    root.appendChild(h3);
-    const byDate = grouped[staffid];
-    Object.keys(byDate).sort((a, b) => b.localeCompare(a)).forEach((date) => {
-      const card = document.createElement("div");
-      card.className = "day-card";
-      card.innerHTML = `<strong>${date}</strong>`;
-      byDate[date].forEach((row) => {
-        const p = document.createElement("p");
-        p.textContent = `2.0: ${row.process20txt} | 1.5: ${row.process15txt}`;
-        card.appendChild(p);
-      });
-      root.appendChild(card);
-    });
-  });
-
-async function loadProcessTexts() {
-  const staffid = document.getElementById("process-staff-filter").value;
-  const url = staffid ? endpoint(`/api/ot/process-texts?otstaffid=${encodeURIComponent(staffid)}`) : endpoint("/api/ot/process-texts");
-  const resp = await fetch(url);
-  const data = await resp.json();
-  renderProcessTexts(data.rows || []);
-}
-
-async function loadProcessTexts() {
-  const staffid = document.getElementById("process-staff-filter").value;
-  const url = staffid ? endpoint(`/api/ot/process-texts?otstaffid=${encodeURIComponent(staffid)}`) : endpoint("/api/ot/process-texts");
-  const resp = await fetch(url);
-  const data = await resp.json();
-  renderProcessTexts(data.rows || []);
-}
-
 function bindEvents() {
   var tabButtons = document.querySelectorAll(".tab-btn");
   for (var i = 0; i < tabButtons.length; i++) {
     var btn = tabButtons[i];
-    btn.addEventListener("click", async function () {
+    btn.addEventListener("click", function () {
       var tab = this.getAttribute("data-tab");
       switchTab(tab);
-      if (tab === "process") {
-        await loadProcessTexts();
-      }
     });
   }
   const saveStaffBtn = document.getElementById("save-staff");
   if (saveStaffBtn) {
     saveStaffBtn.addEventListener("click", saveStaff);
   }
-  const refreshProcessBtn = document.getElementById("refresh-process");
-  if (refreshProcessBtn) {
-    refreshProcessBtn.addEventListener("click", loadProcessTexts);
-  }
-
   const toPeriodBtn = document.getElementById("to-period");
   if (toPeriodBtn) toPeriodBtn.addEventListener("click", async () => {
     state.selectedStaff = document.getElementById("staff-select").value;
