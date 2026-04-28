@@ -21,12 +21,16 @@ BEGIN
 END
 \$\$;
 
-GRANT USAGE ON SCHEMA ot_uat TO ${APP_USER};
-GRANT CREATE ON SCHEMA ot_uat TO ${APP_USER};
 GRANT CONNECT, CREATE, TEMP ON DATABASE postgres TO ${APP_USER};
-ALTER SCHEMA ot_uat OWNER TO ${APP_USER};
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA ot_uat TO ${APP_USER};
-ALTER DEFAULT PRIVILEGES IN SCHEMA ot_uat
+GRANT USAGE, CREATE ON SCHEMA staffinfo TO ${APP_USER};
+GRANT USAGE, CREATE ON SCHEMA otdriverstd TO ${APP_USER};
+ALTER SCHEMA staffinfo OWNER TO ${APP_USER};
+ALTER SCHEMA otdriverstd OWNER TO ${APP_USER};
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA staffinfo TO ${APP_USER};
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA otdriverstd TO ${APP_USER};
+ALTER DEFAULT PRIVILEGES IN SCHEMA staffinfo
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ${APP_USER};
+ALTER DEFAULT PRIVILEGES IN SCHEMA otdriverstd
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ${APP_USER};
 
 DO
@@ -35,14 +39,14 @@ DECLARE
   r RECORD;
 BEGIN
   FOR r IN
-    SELECT tablename
+    SELECT schemaname, tablename
     FROM pg_tables
-    WHERE schemaname = 'ot_uat'
+    WHERE schemaname IN ('staffinfo', 'otdriverstd')
   LOOP
-    EXECUTE format('ALTER TABLE ot_uat.%I OWNER TO %I', r.tablename, '${APP_USER}');
+    EXECUTE format('ALTER TABLE %I.%I OWNER TO %I', r.schemaname, r.tablename, '${APP_USER}');
   END LOOP;
 END
 \$\$;
 EOSQL
 
-echo "OT user '${APP_USER}' is ready."
+echo "OT user '${APP_USER}' is ready for staffinfo/otdriverstd schemas."
