@@ -1,59 +1,58 @@
-CREATE SCHEMA IF NOT EXISTS ot_uat;
-SET search_path TO ot_uat, public;
+CREATE SCHEMA IF NOT EXISTS staffinfo;
+CREATE SCHEMA IF NOT EXISTS otdriverstd;
 
-CREATE TABLE IF NOT EXISTS work_session (
-    session_id       BIGINT PRIMARY KEY,
-    session_date     DATE NOT NULL,
-    period           CHAR(2) NOT NULL CHECK (period IN ('AM','PM')),
-    status           VARCHAR(20) NOT NULL DEFAULT 'OPEN',
-    created_by       VARCHAR(64),
-    note             TEXT,
-    created_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-CREATE UNIQUE INDEX IF NOT EXISTS uq_work_session_date_period
-    ON work_session (session_date, period);
-
-CREATE TABLE IF NOT EXISTS time_entry (
-    id               UUID PRIMARY KEY,
-    session_id       BIGINT NOT NULL,
-    employee_id      CHAR(1) NOT NULL CHECK (employee_id IN ('A','B')),
-    entry_type       VARCHAR(5) NOT NULL CHECK (entry_type IN ('OT','BREAK')),
-    start_time       TIME NOT NULL,
-    end_time         TIME NOT NULL,
-    created_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_time_entry_session
-        FOREIGN KEY (session_id)
-        REFERENCES work_session(session_id)
-        ON DELETE CASCADE
+CREATE TABLE IF NOT EXISTS staffinfo.staffinfo (
+    id           BIGSERIAL PRIMARY KEY,
+    staffid      VARCHAR(64) UNIQUE NOT NULL,
+    nameeng      VARCHAR(255),
+    namechi      VARCHAR(255),
+    displayname  VARCHAR(255),
+    domainname   VARCHAR(255)
 );
 
-CREATE INDEX IF NOT EXISTS idx_time_entry_session_emp
-    ON time_entry (session_id, employee_id);
+ALTER TABLE staffinfo.staffinfo ALTER COLUMN nameeng DROP NOT NULL;
+ALTER TABLE staffinfo.staffinfo ALTER COLUMN namechi DROP NOT NULL;
+ALTER TABLE staffinfo.staffinfo ALTER COLUMN displayname DROP NOT NULL;
+ALTER TABLE staffinfo.staffinfo ALTER COLUMN domainname DROP NOT NULL;
 
-CREATE INDEX IF NOT EXISTS idx_time_entry_session_type
-    ON time_entry (session_id, entry_type);
-
-CREATE TABLE IF NOT EXISTS session_result (
-    session_id               BIGINT NOT NULL,
-    employee_id              CHAR(1) NOT NULL CHECK (employee_id IN ('A','B')),
-    date_label               VARCHAR(64) NOT NULL,
-    rate20_rounded_hours     INTEGER NOT NULL DEFAULT 0,
-    rate15_rounded_hours     INTEGER NOT NULL DEFAULT 0,
-    rate20_minutes           INTEGER NOT NULL DEFAULT 0,
-    rate15_minutes           INTEGER NOT NULL DEFAULT 0,
-    calculated_at            TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT pk_session_result
-        PRIMARY KEY (session_id, employee_id),
-
-    CONSTRAINT fk_session_result_session
-        FOREIGN KEY (session_id)
-        REFERENCES work_session(session_id)
-        ON DELETE CASCADE
+CREATE TABLE IF NOT EXISTS otdriverstd.otperiod (
+    id         BIGSERIAL PRIMARY KEY,
+    date       DATE NOT NULL,
+    otstaffid  VARCHAR(64) NOT NULL,
+    period     CHAR(2) NOT NULL CHECK (period IN ('00', '01', '02')),
+    remarks    VARCHAR(600),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_otperiod_staff_date_period UNIQUE (otstaffid, date, period)
 );
 
-CREATE INDEX IF NOT EXISTS idx_session_result_session
-    ON session_result (session_id);
+CREATE TABLE IF NOT EXISTS otdriverstd.otdetails (
+    id         BIGSERIAL PRIMARY KEY,
+    otid       BIGINT NOT NULL REFERENCES otdriverstd.otperiod(id) ON DELETE CASCADE,
+    type       CHAR(2) NOT NULL CHECK (type IN ('00', '01')),
+    starttime  TIME NOT NULL,
+    endtime    TIME NOT NULL,
+    inputby    VARCHAR(64),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_otdetails_otid ON otdriverstd.otdetails (otid);
+
+CREATE TABLE IF NOT EXISTS otdriverstd.periodresult (
+    id          VARCHAR(10) PRIMARY KEY,
+    otstaffid   VARCHAR(64) NOT NULL,
+    date_label  DATE NOT NULL,
+    process20txt TEXT NOT NULL,
+    process15txt TEXT NOT NULL,
+    hours20     INTEGER NOT NULL DEFAULT 0,
+    hours15     INTEGER NOT NULL DEFAULT 0,
+    mins20      INTEGER NOT NULL DEFAULT 0,
+    mins15      INTEGER NOT NULL DEFAULT 0,
+    totalhrs20  INTEGER NOT NULL DEFAULT 0,
+    totalhrs15  INTEGER NOT NULL DEFAULT 0,
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_periodresult_staff_date ON otdriverstd.periodresult (otstaffid, date_label);
