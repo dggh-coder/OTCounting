@@ -19,8 +19,10 @@ function rowTemplate() {
 function switchTab(tabName) {
   const names = ["ot", "staff", "process"];
   names.forEach((n) => {
-    document.getElementById(`tab-${n}`).classList.toggle("hidden", n !== tabName);
-    document.getElementById(`tab-btn-${n}`).classList.toggle("active", n === tabName);
+    const section = document.getElementById(`tab-${n}`);
+    const button = document.getElementById(`tab-btn-${n}`);
+    if (section) section.classList.toggle("hidden", n !== tabName);
+    if (button) button.classList.toggle("active", n === tabName);
   });
 }
 
@@ -42,19 +44,22 @@ function renderStaffList() {
 function fillStaffSelects() {
   const otSelect = document.getElementById("staff-select");
   const processSelect = document.getElementById("process-staff-filter");
-  otSelect.innerHTML = "<option value=''>-- Select --</option>";
-  processSelect.innerHTML = "<option value=''>All Staff (last 10 days)</option>";
+  if (otSelect) otSelect.innerHTML = "<option value=''>-- Select --</option>";
+  if (processSelect) processSelect.innerHTML = "<option value=''>All Staff (last 10 days)</option>";
 
   state.staff.forEach((s) => {
-    const opt1 = document.createElement("option");
-    opt1.value = s.staffid;
-    opt1.textContent = `${s.displayname || s.staffid} (${s.staffid})`;
-    otSelect.appendChild(opt1);
-
-    const opt2 = document.createElement("option");
-    opt2.value = s.staffid;
-    opt2.textContent = `${s.displayname || s.staffid} (${s.staffid})`;
-    processSelect.appendChild(opt2);
+    if (otSelect) {
+      const opt1 = document.createElement("option");
+      opt1.value = s.staffid;
+      opt1.textContent = `${s.displayname || s.staffid} (${s.staffid})`;
+      otSelect.appendChild(opt1);
+    }
+    if (processSelect) {
+      const opt2 = document.createElement("option");
+      opt2.value = s.staffid;
+      opt2.textContent = `${s.displayname || s.staffid} (${s.staffid})`;
+      processSelect.appendChild(opt2);
+    }
   });
 }
 
@@ -260,16 +265,19 @@ async function loadProcessTexts() {
 }
 
 function bindEvents() {
-  document.getElementById("tab-btn-ot").addEventListener("click", () => switchTab("ot"));
-  document.getElementById("tab-btn-staff").addEventListener("click", () => switchTab("staff"));
-  document.getElementById("tab-btn-process").addEventListener("click", async () => {
-    switchTab("process");
-    await loadProcessTexts();
+  document.querySelectorAll(".tab-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const tab = btn.dataset.tab;
+      switchTab(tab);
+      if (tab === "process") {
+        await loadProcessTexts();
+      }
+    });
   });
-  document.getElementById("save-staff").addEventListener("click", saveStaff);
-  document.getElementById("refresh-process").addEventListener("click", loadProcessTexts);
+  document.getElementById("save-staff")?.addEventListener("click", saveStaff);
+  document.getElementById("refresh-process")?.addEventListener("click", loadProcessTexts);
 
-  document.getElementById("to-period").addEventListener("click", async () => {
+  document.getElementById("to-period")?.addEventListener("click", async () => {
     state.selectedStaff = document.getElementById("staff-select").value;
     state.date = document.getElementById("work-date").value;
     if (!state.selectedStaff || !state.date) {
@@ -284,12 +292,12 @@ function bindEvents() {
     showStep("step-input");
   });
 
-  document.getElementById("add-row").addEventListener("click", () => {
+  document.getElementById("add-row")?.addEventListener("click", () => {
     state.rows.push(rowTemplate());
     renderRows();
   });
-  document.getElementById("cancel-input").addEventListener("click", () => resetToStart());
-  document.getElementById("confirm").addEventListener("click", confirmInput);
+  document.getElementById("cancel-input")?.addEventListener("click", () => resetToStart());
+  document.getElementById("confirm")?.addEventListener("click", confirmInput);
 }
 
 function init() {

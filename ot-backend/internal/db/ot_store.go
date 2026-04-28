@@ -85,7 +85,15 @@ type ProcessTextRow struct {
 }
 
 func (s *Store) ListStaff(ctx context.Context) ([]Staff, error) {
-	rows, err := s.pool.Query(ctx, `SELECT staffid, nameeng, namechi, displayname, domainname FROM staffinfo.staffinfo ORDER BY displayname, staffid`)
+	rows, err := s.pool.Query(ctx, `
+		SELECT s.staffid, s.nameeng, s.namechi, s.displayname, s.domainname
+		FROM staffinfo.staffinfo s
+		UNION
+		SELECT p.otstaffid AS staffid, '' AS nameeng, '' AS namechi, p.otstaffid AS displayname, '' AS domainname
+		FROM otdriverstd.otperiod p
+		WHERE NOT EXISTS (SELECT 1 FROM staffinfo.staffinfo s2 WHERE s2.staffid = p.otstaffid)
+		ORDER BY displayname, staffid
+	`)
 	if err != nil {
 		return nil, err
 	}
