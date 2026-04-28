@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"ot-uat/internal/db"
 )
@@ -54,6 +55,7 @@ func (h *OTHandler) Input(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "otstaffid/date required", http.StatusBadRequest)
 		return
 	}
+	req.Date = normalizeDate(req.Date)
 	if req.Period != "" && !validPeriod(req.Period) {
 		http.Error(w, "period must be 00/01/02", http.StatusBadRequest)
 		return
@@ -114,7 +116,8 @@ func (h *OTHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := r.URL.Query()
-	entries, err := h.Store.GetEntries(r.Context(), q.Get("otstaffid"), q.Get("date"), q.Get("period"))
+	date := normalizeDate(q.Get("date"))
+	entries, err := h.Store.GetEntries(r.Context(), q.Get("otstaffid"), date, q.Get("period"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -273,4 +276,24 @@ func periodFromStartTime(hhmm string) (string, error) {
 		return "01", nil
 	}
 	return "02", nil
+}
+
+func normalizeDate(raw string) string {
+	s := strings.TrimSpace(raw)
+	if s == "" {
+		return s
+	}
+	layouts := []string{
+		"2006-01-02",
+		"02-Jan-2006",
+		"2-Jan-2006",
+		"02/01/2006",
+		"2/1/2006",
+	}
+	for _, layout := range layouts {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t.Format("2006-01-02")
+		}
+	}
+	return s
 }
