@@ -1,34 +1,18 @@
-body {
-  font-family: Arial, sans-serif;
-  margin: 1rem;
-  background: #f5f5f5;
-}
-
-main {
-  max-width: 1000px;
-  margin: 0 auto;
-  background: white;
-  padding: 1rem;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 0.5rem 0 1rem;
-}
-
-th, td {
-  border: 1px solid #ddd;
-  padding: 0.4rem;
-}
-
-input, select, button {
-  padding: 0.3rem;
-}
-
-.day-card, .month-card {
-  border: 1px solid #ddd;
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
-  background: #fafafa;
-}
+body { font-family: Arial, sans-serif; margin: 0; background: #f5f6f8; }
+main { max-width: 980px; margin: 0 auto; padding: 1rem; }
+.card { background: #fff; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #e1e4e8; }
+.hidden { display: none; }
+.tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.tab-btn { background: #e9ecef; border: 1px solid #cbd3da; }
+.tab-btn.active { background: #0d6efd; color: #fff; border-color: #0d6efd; }
+.row { display: flex; gap: 0.8rem; align-items: end; flex-wrap: wrap; }
+label { display: flex; flex-direction: column; gap: 0.2rem; }
+button { padding: 0.4rem 0.8rem; cursor: pointer; }
+table { width: 100%; border-collapse: collapse; margin: 0.8rem 0; }
+th, td { border: 1px solid #ddd; padding: 0.5rem; }
+.msg { color: #b00020; min-height: 1.2rem; }
+.hint { color: #666; font-size: 0.9rem; margin: 0.6rem 0; }
+.actions { display: flex; gap: 0.6rem; }
+#context { font-weight: bold; margin-bottom: 0.6rem; }
+#staff-list .staff-item { padding: 0.4rem 0; border-bottom: 1px solid #eee; }
+.day-card { border: 1px solid #ddd; padding: 0.6rem; margin: 0.5rem 0; background: #fafafa; }
