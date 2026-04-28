@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"ot-uat/internal/engine"
@@ -189,7 +190,7 @@ func (s *Store) GetMonthlyTotals(ctx context.Context, year int, month int) ([]Mo
 }
 
 func (s *Store) rebuildPeriodResultTx(ctx context.Context, tx pgx.Tx, periodID int64, otstaffid, date, period string) error {
-	rows, err := tx.Query(ctx, `SELECT id, type, to_char(starttime, 'HH24:MI'), to_char(endtime, 'HH24:MI') FROM otdriverstd.otdetails WHERE otid = $1 ORDER BY id`, periodID)
+	rows, err := tx.Query(ctx, `SELECT id, type, starttime::text, endtime::text FROM otdriverstd.otdetails WHERE otid = $1 ORDER BY id`, periodID)
 	if err != nil {
 		return err
 	}
@@ -203,6 +204,14 @@ func (s *Store) rebuildPeriodResultTx(ctx context.Context, tx pgx.Tx, periodID i
 		var t, start, end string
 		if err := rows.Scan(&id, &t, &start, &end); err != nil {
 			return err
+		}
+		start, err = normalizeHHMM(start)
+		if err != nil {
+			return fmt.Errorf("invalid start time in otdetails id=%d: %w", id, err)
+		}
+		end, err = normalizeHHMM(end)
+		if err != nil {
+			return fmt.Errorf("invalid end time in otdetails id=%d: %w", id, err)
 		}
 		if t == "01" {
 			input.BreakEntries = append(input.BreakEntries, engine.BreakEntry{ID: fmt.Sprintf("B%d", id), EmployeeID: engine.EmployeeA, Date: date, Period: periodToEngine(period), StartTime: start, EndTime: end})
@@ -293,4 +302,24 @@ func periodToEngine(period string) string {
 		return "AM"
 	}
 	return "PM"
+}
+
+func normalizeHHMM(raw string) (string, error) {
+	v := strings.TrimSpace(raw)
+	if strings.Contains(v, " ") {
+		v = strings.Fields(v)[0]
+	}
+	if len(v) >= 5 {
+		v = v[:5]
+	}
+	parts := strings.Split(v, ":")
+	if len(parts) != 2 {
+		return "", fmt.Errorf("invalid time: %s", raw)
+	}
+	h, errH := strconv.Atoi(parts[0])
+	m, errM := strconv.Atoi(parts[1])
+	if errH != nil || errM != nil || h < 0 || h > 23 || m < 0 || m > 59 {
+		return "", fmt.Errorf("invalid time: %s", raw)
+	}
+	return fmt.Sprintf("%02d:%02d", h, m), nil
 }

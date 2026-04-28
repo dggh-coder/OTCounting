@@ -4,7 +4,6 @@ const state = {
   staff: [],
   selectedStaff: "",
   date: "",
-  period: "",
   rows: []
 };
 
@@ -13,13 +12,7 @@ function endpoint(path) {
 }
 
 function rowTemplate() {
-  return { type: "00", startTime: "", endTime: "", inputBy: "" };
-}
-
-function formatPeriodLabel(p) {
-  if (p === "00") return "Morning (早)";
-  if (p === "01") return "Noon (中)";
-  return "Evening (晚)";
+  return { type: "00", startTime: "", endTime: "" };
 }
 
 function switchTab(tabName) {
@@ -108,7 +101,6 @@ function renderRows() {
       <td><select data-k="type"><option value="00" ${r.type === "00" ? "selected" : ""}>OT</option><option value="01" ${r.type === "01" ? "selected" : ""}>Break</option></select></td>
       <td><input data-k="startTime" placeholder="HH:MM" value="${r.startTime}"></td>
       <td><input data-k="endTime" placeholder="HH:MM" value="${r.endTime}"></td>
-      <td><input data-k="inputBy" placeholder="staffid (optional)" value="${r.inputBy}"></td>
       <td><button data-action="del" type="button">Delete</button></td>
     `;
     tr.querySelectorAll("[data-k]").forEach((el) => {
@@ -125,13 +117,12 @@ function renderRows() {
 }
 
 function showStep(stepId) {
-  ["step-select", "step-period", "step-input"].forEach((id) => {
+  ["step-select", "step-input"].forEach((id) => {
     document.getElementById(id).classList.toggle("hidden", id !== stepId);
   });
 }
 
 function resetToStart(message = "") {
-  state.period = "";
   state.rows = [];
   document.getElementById("input-msg").textContent = "";
   document.getElementById("select-msg").textContent = message;
@@ -145,16 +136,17 @@ async function confirmInput() {
     msg.textContent = "Please add at least one row.";
     return;
   }
-  const entries = state.rows.map((r) => ({
-    type: r.type,
-    startTime: r.startTime,
-    endTime: r.endTime,
-    inputBy: r.inputBy || null
-  }));
+  const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
+  for (const r of state.rows) {
+    if (!r.startTime || !r.endTime || !timePattern.test(r.startTime) || !timePattern.test(r.endTime)) {
+      msg.textContent = "Start and End must be HH:MM and cannot be empty.";
+      return;
+    }
+  }
+  const entries = state.rows.map((r) => ({ type: r.type, startTime: r.startTime, endTime: r.endTime }));
   const payload = {
     otstaffid: state.selectedStaff,
     date: state.date,
-    period: state.period,
     entries
   };
   const resp = await fetch(endpoint("/api/ot/input"), {
@@ -182,26 +174,17 @@ function bindEvents() {
       return;
     }
     document.getElementById("select-msg").textContent = "";
-    showStep("step-period");
-  });
-
-  document.getElementById("back-select").addEventListener("click", () => showStep("step-select"));
-
-  document.querySelectorAll("[data-period]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      state.period = btn.dataset.period;
-      state.rows = [rowTemplate()];
-      document.getElementById("context").textContent = `${state.selectedStaff} / ${state.date} / ${formatPeriodLabel(state.period)}`;
-      renderRows();
-      showStep("step-input");
-    });
+    state.rows = [rowTemplate()];
+    document.getElementById("context").textContent = `${state.selectedStaff} / ${state.date}`;
+    renderRows();
+    showStep("step-input");
   });
 
   document.getElementById("add-row").addEventListener("click", () => {
     state.rows.push(rowTemplate());
     renderRows();
   });
-  document.getElementById("cancel-input").addEventListener("click", () => showStep("step-period"));
+  document.getElementById("cancel-input").addEventListener("click", () => showStep("step-select"));
   document.getElementById("confirm").addEventListener("click", confirmInput);
 }
 

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -49,11 +50,11 @@ func (h *OTHandler) Input(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid json", http.StatusBadRequest)
 		return
 	}
-	if req.OTStaffID == "" || req.Date == "" || req.Period == "" {
-		http.Error(w, "otstaffid/date/period required", http.StatusBadRequest)
+	if req.OTStaffID == "" || req.Date == "" {
+		http.Error(w, "otstaffid/date required", http.StatusBadRequest)
 		return
 	}
-	if !validPeriod(req.Period) {
+	if req.Period != "" && !validPeriod(req.Period) {
 		http.Error(w, "period must be 00/01/02", http.StatusBadRequest)
 		return
 	}
@@ -73,10 +74,35 @@ func (h *OTHandler) Input(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	saved, err := h.Store.SavePeriodEntries(r.Context(), req.OTStaffID, req.Date, req.Period, entries)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	saved := make([]db.SavedEntry, 0)
+	if req.Period != "" {
+		list, err := h.Store.SavePeriodEntries(r.Context(), req.OTStaffID, req.Date, req.Period, entries)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		saved = append(saved, list...)
+	} else {
+		grouped := map[string][]db.EntryInput{"00": {}, "01": {}, "02": {}}
+		for _, e := range entries {
+			p, err := periodFromStartTime(e.StartTime)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			grouped[p] = append(grouped[p], e)
+		}
+		for _, p := range []string{"00", "01", "02"} {
+			if len(grouped[p]) == 0 {
+				continue
+			}
+			list, err := h.Store.SavePeriodEntries(r.Context(), req.OTStaffID, req.Date, p, grouped[p])
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			saved = append(saved, list...)
+		}
 	}
 	_ = json.NewEncoder(w).Encode(map[string]any{"saved": saved})
 }
@@ -193,4 +219,24 @@ func validTime(v string) bool {
 		return false
 	}
 	return h >= 0 && h <= 23 && m >= 0 && m <= 59
+}
+
+func periodFromStartTime(hhmm string) (string, error) {
+	parts := strings.Split(hhmm, ":")
+	if len(parts) != 2 {
+		return "", fmt.Errorf("invalid time format: %s", hhmm)
+	}
+	h, errH := strconv.Atoi(parts[0])
+	m, errM := strconv.Atoi(parts[1])
+	if errH != nil || errM != nil || h < 0 || h > 23 || m < 0 || m > 59 {
+		return "", fmt.Errorf("invalid time format: %s", hhmm)
+	}
+	total := h*60 + m
+	if total >= 0 && total < 11*60 {
+		return "00", nil
+	}
+	if total >= 11*60 && total < 15*60 {
+		return "01", nil
+	}
+	return "02", nil
 }
