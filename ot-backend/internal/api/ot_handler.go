@@ -55,6 +55,7 @@ func (h *OTHandler) Input(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "otstaffid/date required", http.StatusBadRequest)
 		return
 	}
+	req.OTStaffID = strings.TrimSpace(req.OTStaffID)
 	req.Date = normalizeDate(req.Date)
 	if req.Period != "" && !validPeriod(req.Period) {
 		http.Error(w, "period must be 00/01/02", http.StatusBadRequest)
@@ -117,7 +118,9 @@ func (h *OTHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 	q := r.URL.Query()
 	date := normalizeDate(q.Get("date"))
-	entries, err := h.Store.GetEntries(r.Context(), q.Get("otstaffid"), date, q.Get("period"))
+	staffID := strings.TrimSpace(q.Get("otstaffid"))
+	period := strings.TrimSpace(q.Get("period"))
+	entries, err := h.Store.GetEntries(r.Context(), staffID, date, period)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
