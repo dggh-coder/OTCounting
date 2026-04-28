@@ -273,15 +273,17 @@ async function loadProcessTexts() {
 }
 
 function bindEvents() {
-  document.querySelectorAll(".tab-btn").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const tab = btn.dataset.tab;
+  var tabButtons = document.querySelectorAll(".tab-btn");
+  for (var i = 0; i < tabButtons.length; i++) {
+    var btn = tabButtons[i];
+    btn.addEventListener("click", async function () {
+      var tab = this.getAttribute("data-tab");
       switchTab(tab);
       if (tab === "process") {
         await loadProcessTexts();
       }
     });
-  });
+  }
   const saveStaffBtn = document.getElementById("save-staff");
   if (saveStaffBtn) {
     saveStaffBtn.addEventListener("click", saveStaff);
