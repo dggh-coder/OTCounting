@@ -25,8 +25,11 @@ type inputRequest struct {
 }
 
 type staffInputRequest struct {
-	StaffNo   string `json:"staffNo"`
-	StaffCode string `json:"staffCode"`
+	StaffID     string `json:"staffid"`
+	NameEng     string `json:"nameeng"`
+	NameChi     string `json:"namechi"`
+	DisplayName string `json:"displayname"`
+	DomainName  string `json:"domainname"`
 }
 
 func (h *OTHandler) Input(w http.ResponseWriter, r *http.Request) {
@@ -145,14 +148,23 @@ func (h *OTHandler) StaffInput(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid json", http.StatusBadRequest)
 		return
 	}
-	req.StaffNo = strings.TrimSpace(req.StaffNo)
-	req.StaffCode = strings.TrimSpace(req.StaffCode)
-	if req.StaffNo == "" || req.StaffCode == "" {
-		http.Error(w, "staffNo and staffCode are required", http.StatusBadRequest)
+	req.StaffID = strings.TrimSpace(req.StaffID)
+	req.NameEng = strings.TrimSpace(req.NameEng)
+	req.NameChi = strings.TrimSpace(req.NameChi)
+	req.DisplayName = strings.TrimSpace(req.DisplayName)
+	req.DomainName = strings.TrimSpace(req.DomainName)
+	if req.StaffID == "" || req.NameEng == "" || req.NameChi == "" || req.DisplayName == "" || req.DomainName == "" {
+		http.Error(w, "staffid, nameeng, namechi, displayname, domainname are required", http.StatusBadRequest)
 		return
 	}
 
-	saved, err := h.Store.UpsertStaff(r.Context(), req.StaffNo, req.StaffCode)
+	saved, err := h.Store.UpsertStaff(r.Context(), db.Staff{
+		StaffID:     req.StaffID,
+		NameEng:     req.NameEng,
+		NameChi:     req.NameChi,
+		DisplayName: req.DisplayName,
+		DomainName:  req.DomainName,
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

@@ -18,23 +18,23 @@ type Staff struct {
 	DomainName  string `json:"domainname"`
 }
 
-func (s *Store) UpsertStaff(ctx context.Context, staffNo, staffCode string) (Staff, error) {
+func (s *Store) UpsertStaff(ctx context.Context, in Staff) (Staff, error) {
 	updateTag, err := s.pool.Exec(ctx, `
 		UPDATE staffinfo.staffinfo
-		SET domainname = $2,
-		    displayname = $1,
-		    nameeng = $1,
-		    namechi = $1
+		SET nameeng = $2,
+		    namechi = $3,
+		    displayname = $4,
+		    domainname = $5
 		WHERE staffid = $1
-	`, staffNo, staffCode)
+	`, in.StaffID, in.NameEng, in.NameChi, in.DisplayName, in.DomainName)
 	if err != nil {
 		return Staff{}, err
 	}
 	if updateTag.RowsAffected() == 0 {
 		if _, err := s.pool.Exec(ctx, `
 			INSERT INTO staffinfo.staffinfo (staffid, nameeng, namechi, displayname, domainname)
-			VALUES ($1, $1, $1, $1, $2)
-		`, staffNo, staffCode); err != nil {
+			VALUES ($1, $2, $3, $4, $5)
+		`, in.StaffID, in.NameEng, in.NameChi, in.DisplayName, in.DomainName); err != nil {
 			return Staff{}, err
 		}
 	}
@@ -44,7 +44,7 @@ func (s *Store) UpsertStaff(ctx context.Context, staffNo, staffCode string) (Sta
 		SELECT staffid, nameeng, namechi, displayname, domainname
 		FROM staffinfo.staffinfo
 		WHERE staffid = $1
-	`, staffNo).Scan(&out.StaffID, &out.NameEng, &out.NameChi, &out.DisplayName, &out.DomainName); err != nil {
+	`, in.StaffID).Scan(&out.StaffID, &out.NameEng, &out.NameChi, &out.DisplayName, &out.DomainName); err != nil {
 		return Staff{}, err
 	}
 	return out, nil

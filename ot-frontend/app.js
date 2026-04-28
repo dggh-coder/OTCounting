@@ -40,7 +40,7 @@ function renderStaffList() {
   state.staff.forEach((s) => {
     const div = document.createElement("div");
     div.className = "staff-item";
-    div.textContent = `No: ${s.staffid} | Code: ${s.domainname}`;
+    div.textContent = `ID: ${s.staffid} | Eng: ${s.nameeng} | Chi: ${s.namechi} | Display: ${s.displayname} | Domain: ${s.domainname}`;
     root.appendChild(div);
   });
 }
@@ -55,7 +55,7 @@ async function loadStaff() {
     state.staff.forEach((s) => {
       const opt = document.createElement("option");
       opt.value = s.staffid;
-      opt.textContent = `${s.staffid} (${s.domainname})`;
+      opt.textContent = `${s.displayname} (${s.staffid})`;
       select.appendChild(opt);
     });
     renderStaffList();
@@ -68,25 +68,32 @@ async function loadStaff() {
 async function saveStaff() {
   const msg = document.getElementById("staff-msg");
   msg.textContent = "";
-  const staffNo = document.getElementById("staff-no").value.trim();
-  const staffCode = document.getElementById("staff-code").value.trim();
-  if (!staffNo || !staffCode) {
-    msg.textContent = "Staff No and Staff Code are required.";
+  msg.style.color = "#b00020";
+  const staffid = document.getElementById("staff-id").value.trim();
+  const nameeng = document.getElementById("staff-nameeng").value.trim();
+  const namechi = document.getElementById("staff-namechi").value.trim();
+  const displayname = document.getElementById("staff-displayname").value.trim();
+  const domainname = document.getElementById("staff-domainname").value.trim();
+  if (!staffid || !nameeng || !namechi || !displayname || !domainname) {
+    msg.textContent = "All staff fields are required.";
     return;
   }
 
   const resp = await fetch(endpoint("/api/staff/input"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ staffNo, staffCode })
+    body: JSON.stringify({ staffid, nameeng, namechi, displayname, domainname })
   });
   if (!resp.ok) {
     msg.textContent = await resp.text();
     return;
   }
 
-  document.getElementById("staff-no").value = "";
-  document.getElementById("staff-code").value = "";
+  document.getElementById("staff-id").value = "";
+  document.getElementById("staff-nameeng").value = "";
+  document.getElementById("staff-namechi").value = "";
+  document.getElementById("staff-displayname").value = "";
+  document.getElementById("staff-domainname").value = "";
   msg.style.color = "#0a7a2f";
   msg.textContent = "Staff saved.";
   await loadStaff();
