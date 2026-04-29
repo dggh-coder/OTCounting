@@ -36,6 +36,28 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA otdriverstd
 DO
 \$\$
 DECLARE
+  has_objects boolean;
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = '${APP_USER}') THEN
+    SELECT EXISTS (
+      SELECT 1
+      FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = '${APP_USER}'
+    ) INTO has_objects;
+
+    IF has_objects THEN
+      RAISE NOTICE 'Schema % has objects; skip dropping it.', '${APP_USER}';
+    ELSE
+      EXECUTE format('DROP SCHEMA %I', '${APP_USER}');
+    END IF;
+  END IF;
+END
+\$\$;
+
+DO
+\$\$
+DECLARE
   r RECORD;
 BEGIN
   FOR r IN
