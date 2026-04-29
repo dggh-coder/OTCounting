@@ -159,7 +159,7 @@ func getEntriesByFilters(ctx context.Context, q interface {
 		JOIN otdriverstd.otperiod p ON p.id = d.otid
 		WHERE ($1 = '' OR p.otstaffid = $1)
 		  AND ($2 = '' OR to_char(p.date, 'YYYY-MM-DD') = $2)
-		  AND ($3 = '' OR p.period = $3)
+		  AND (NULLIF(BTRIM($3), '') IS NULL OR p.period = $3)
 		ORDER BY p.date, p.period, d.id
 	`, otstaffid, date, period)
 	if err != nil {
