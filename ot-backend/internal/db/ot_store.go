@@ -125,7 +125,7 @@ func (s *Store) SavePeriodEntries(ctx context.Context, otstaffid, date, period s
 		return nil, err
 	}
 	for _, e := range entries {
-		if _, err := tx.Exec(ctx, `INSERT INTO otdriverstd.otdetails (otid, type, starttime, endtime, inputby) VALUES ($1, $2, $3::time, $4::time, $5)`, periodID, e.Type, e.StartTime, e.EndTime, nullableTrim(e.InputBy)); err != nil {
+		if _, err := tx.Exec(ctx, `INSERT INTO otdriverstd.otdetails (otid, type, starttime, endtime, inputby) VALUES ($1, $2, $3, $4, $5)`, periodID, e.Type, e.StartTime, e.EndTime, nullableTrim(e.InputBy)); err != nil {
 			return nil, err
 		}
 	}
@@ -152,8 +152,8 @@ func getEntriesByFilters(ctx context.Context, q interface {
 }, otstaffid, date, period string) ([]SavedEntry, error) {
 	rows, err := q.Query(ctx, `
 			SELECT d.id, d.otid, p.otstaffid, to_char(p.date, 'YYYY-MM-DD'), p.period, d.type,
-			       to_char(d.starttime::time, 'HH24:MI') AS start_hhmm,
-			       to_char(d.endtime::time, 'HH24:MI') AS end_hhmm,
+			       d.starttime,
+			       d.endtime,
 			       d.inputby
 		FROM otdriverstd.otdetails d
 		JOIN otdriverstd.otperiod p ON p.id = d.otid

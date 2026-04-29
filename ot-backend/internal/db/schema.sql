@@ -30,12 +30,19 @@ CREATE TABLE IF NOT EXISTS otdriverstd.otdetails (
     id         BIGSERIAL PRIMARY KEY,
     otid       BIGINT NOT NULL REFERENCES otdriverstd.otperiod(id) ON DELETE CASCADE,
     type       CHAR(2) NOT NULL CHECK (type IN ('00', '01')),
-    starttime  TIME NOT NULL,
-    endtime    TIME NOT NULL,
+    starttime  VARCHAR(16) NOT NULL,
+    endtime    VARCHAR(16) NOT NULL,
     inputby    VARCHAR(64),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE otdriverstd.otdetails
+  ALTER COLUMN starttime TYPE VARCHAR(16)
+  USING COALESCE(regexp_substr(starttime::text, '[0-9]{2}:[0-9]{2}'), starttime::text);
+ALTER TABLE otdriverstd.otdetails
+  ALTER COLUMN endtime TYPE VARCHAR(16)
+  USING COALESCE(regexp_substr(endtime::text, '[0-9]{2}:[0-9]{2}'), endtime::text);
 
 CREATE INDEX IF NOT EXISTS idx_otdetails_otid ON otdriverstd.otdetails (otid);
 
