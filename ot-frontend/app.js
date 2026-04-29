@@ -1,4 +1,5 @@
-const API_BASE = window.__API_BASE__ || "";
+const API_BASE = window.__API_BASE__
+  || (window.location.port === "8080" ? "" : `${window.location.protocol}//${window.location.hostname}:8080`);
 
 const state = {
   staff: [],
