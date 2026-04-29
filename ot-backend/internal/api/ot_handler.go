@@ -292,6 +292,8 @@ func normalizeDate(raw string) string {
 		"2-Jan-2006",
 		"02/01/2006",
 		"2/1/2006",
+		"01/02/2006",
+		"1/2/2006",
 	}
 	for _, layout := range layouts {
 		if t, err := time.Parse(layout, s); err == nil {
