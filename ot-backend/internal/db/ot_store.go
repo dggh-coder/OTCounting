@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"ot-uat/internal/engine"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -82,6 +81,11 @@ type ProcessTextRow struct {
 	DateLabel    string `json:"date_label"`
 	Process20Txt string `json:"process20txt"`
 	Process15Txt string `json:"process15txt"`
+}
+
+type timeSpan struct {
+	start time.Time
+	end   time.Time
 }
 
 func (s *Store) ListStaff(ctx context.Context) ([]Staff, error) {
@@ -266,9 +270,8 @@ func (s *Store) rebuildPeriodResultTx(ctx context.Context, tx pgx.Tx, periodID i
 	}
 	defer rows.Close()
 
-	input := engine.CalculateInput{}
-	proc20Parts := []string{}
-	proc15Parts := []string{}
+	otRanges := []timeSpan{}
+	breakRanges := []timeSpan{}
 	for rows.Next() {
 		var id int64
 		var t, start, end string
@@ -283,55 +286,95 @@ func (s *Store) rebuildPeriodResultTx(ctx context.Context, tx pgx.Tx, periodID i
 		if err != nil {
 			return fmt.Errorf("invalid end time in otdetails id=%d: %w", id, err)
 		}
-		if t == "01" {
-			input.BreakEntries = append(input.BreakEntries, engine.BreakEntry{ID: fmt.Sprintf("B%d", id), EmployeeID: engine.EmployeeA, Date: date, Period: periodToEngine(period), StartTime: start, EndTime: end})
-			proc15Parts = append(proc15Parts, start+"-"+end)
-		} else {
-			input.OTEntries = append(input.OTEntries, engine.OTEntry{ID: fmt.Sprintf("O%d", id), EmployeeID: engine.EmployeeA, Date: date, Period: periodToEngine(period), StartTime: start, EndTime: end})
-			proc20Parts = append(proc20Parts, start+"-"+end)
+		r, err := parseDateRange(date, start, end)
+		if err != nil {
+			return fmt.Errorf("invalid time range in otdetails id=%d: %w", id, err)
 		}
+		if t == "01" {
+			breakRanges = append(breakRanges, r)
+			continue
+		}
+		otRanges = append(otRanges, r)
 	}
 	if err := rows.Err(); err != nil {
 		return err
 	}
 
-	out, err := engine.NewCalculator().Calculate(input)
-	if err != nil {
-		return err
-	}
-	daily := engine.DailySummary{DateLabel: date}
-	for _, d := range out.DailySummary[engine.EmployeeA] {
-		daily = d
-		break
+	rate15Parts := []string{}
+	rate20Parts := []string{}
+	rate15Mins := 0
+	rate20Mins := 0
+
+	for _, ot := range otRanges {
+		segments := []timeSpan{ot}
+		for _, br := range breakRanges {
+			segments = subtractTmRange(segments, br)
+		}
+		for _, seg := range segments {
+			if !seg.end.After(seg.start) {
+				continue
+			}
+			cur := seg.start
+			for cur.Before(seg.end) {
+				next := cur.Add(time.Minute)
+				rate := classifyRate(cur)
+				if rate == 15 {
+					rate15Mins++
+				} else if rate == 20 {
+					rate20Mins++
+				}
+				cur = next
+			}
+			r15Segs, r20Segs := splitSegmentsByRate(seg)
+			rate15Parts = append(rate15Parts, r15Segs...)
+			rate20Parts = append(rate20Parts, r20Segs...)
+		}
 	}
 
 	id := makePeriodResultID(date, period)
-	process20 := "2.0 process: " + strings.Join(proc20Parts, " + ")
-	process15 := "1.5 process: " + strings.Join(proc15Parts, " + ")
+	hours20, mins20 := minsToHM(rate20Mins)
+	hours15, mins15 := minsToHM(rate15Mins)
+	process20 := formatProcessText(rate20Parts, hours20, mins20)
+	process15 := formatProcessText(rate15Parts, hours15, mins15)
+	total20, total15 := mixedRoundHours(hours20, mins20, hours15, mins15)
 	updateTag, err := tx.Exec(ctx, `
 		UPDATE otdriverstd.periodresult
 		SET otstaffid = $2, date_label = $3::date, process20txt = $4, process15txt = $5,
 		    hours20 = $6, hours15 = $7, mins20 = $8, mins15 = $9, totalhrs20 = $10, totalhrs15 = $11, updated_at = CURRENT_TIMESTAMP
 		WHERE id = $1
 	`, id, otstaffid, date, process20, process15,
-		daily.Rate20RoundedHours, daily.Rate15RoundedHours, daily.Rate20Minutes, daily.Rate15Minutes,
-		daily.Rate20RoundedHours, daily.Rate15RoundedHours)
+		hours20, hours15, mins20, mins15, total20, total15)
 	if err != nil {
 		return err
 	}
 	if updateTag.RowsAffected() == 0 {
 		_, err = tx.Exec(ctx, `
-			INSERT INTO otdriverstd.periodresult
-			(id, otstaffid, date_label, process20txt, process15txt, hours20, hours15, mins20, mins15, totalhrs20, totalhrs15)
-			VALUES ($1, $2, $3::date, $4, $5, $6, $7, $8, $9, $10, $11)
-		`, id, otstaffid, date, process20, process15,
-			daily.Rate20RoundedHours, daily.Rate15RoundedHours, daily.Rate20Minutes, daily.Rate15Minutes,
-			daily.Rate20RoundedHours, daily.Rate15RoundedHours)
+				INSERT INTO otdriverstd.periodresult
+				(id, otstaffid, date_label, process20txt, process15txt, hours20, hours15, mins20, mins15, totalhrs20, totalhrs15)
+				VALUES ($1, $2, $3::date, $4, $5, $6, $7, $8, $9, $10, $11)
+			`, id, otstaffid, date, process20, process15,
+				hours20, hours15, mins20, mins15, total20, total15)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func parseDateRange(date, start, end string) (timeSpan, error) {
+	layout := "2006-01-02 15:04"
+	s, err := time.Parse(layout, date+" "+start)
+	if err != nil {
+		return timeSpan{}, err
+	}
+	e, err := time.Parse(layout, date+" "+end)
+	if err != nil {
+		return timeSpan{}, err
+	}
+	if !e.After(s) {
+		e = e.Add(24 * time.Hour)
+	}
+	return timeSpan{start: s, end: e}, nil
 }
 
 func upsertOTPeriod(ctx context.Context, tx pgx.Tx, otstaffid, date, period string) (int64, error) {
@@ -372,6 +415,117 @@ func periodToEngine(period string) string {
 		return "AM"
 	}
 	return "PM"
+}
+
+func subtractTmRange(segments []timeSpan, sub timeSpan) []timeSpan {
+	out := make([]timeSpan, 0, len(segments))
+	for _, seg := range segments {
+		if !sub.end.After(seg.start) || !sub.start.Before(seg.end) {
+			out = append(out, seg)
+			continue
+		}
+		if sub.start.After(seg.start) {
+			out = append(out, timeSpan{start: seg.start, end: minTime(sub.start, seg.end)})
+		}
+		if sub.end.Before(seg.end) {
+			out = append(out, timeSpan{start: maxTime(sub.end, seg.start), end: seg.end})
+		}
+	}
+	return out
+}
+
+func splitSegmentsByRate(seg timeSpan) ([]string, []string) {
+	r15 := []string{}
+	r20 := []string{}
+	if !seg.end.After(seg.start) {
+		return r15, r20
+	}
+	curStart := seg.start
+	curRate := classifyRate(seg.start)
+	for cur := seg.start.Add(time.Minute); !cur.After(seg.end); cur = cur.Add(time.Minute) {
+		if cur.Equal(seg.end) || classifyRate(cur) != curRate {
+			part := fmt.Sprintf("(%s-%s)", curStart.Format("15:04"), cur.Format("15:04"))
+			if curRate == 15 {
+				r15 = append(r15, part)
+			} else if curRate == 20 {
+				r20 = append(r20, part)
+			}
+			curStart = cur
+			if !cur.Equal(seg.end) {
+				curRate = classifyRate(cur)
+			}
+		}
+	}
+	return r15, r20
+}
+
+func classifyRate(t time.Time) int {
+	mins := t.Hour()*60 + t.Minute()
+	switch {
+	case mins >= 7*60 && mins < 8*60+45:
+		return 15
+	case mins >= 13*60 && mins < 14*60:
+		return 15
+	case mins >= 18*60+15 && mins < 20*60:
+		return 15
+	case mins >= 8*60+45 && mins < 13*60:
+		return 0
+	case mins >= 14*60 && mins < 18*60+15:
+		return 0
+	default:
+		return 20
+	}
+}
+
+func minsToHM(total int) (int, int) { return total / 60, total % 60 }
+
+func formatProcessText(parts []string, h, m int) string {
+	if len(parts) == 0 {
+		return ""
+	}
+	return strings.Join(parts, " + ") + fmt.Sprintf(" = %dH,%dM", h, m)
+}
+
+func mixedRoundHours(h20, m20, h15, m15 int) (int, int) {
+	totalM := m20 + m15
+	out20, out15 := h20, h15
+	if totalM < 30 {
+		return out20, out15
+	}
+	if totalM < 60 {
+		if m15 > m20 {
+			out15++
+		} else {
+			out20++
+		}
+		return out20, out15
+	}
+	if m15 > m20 {
+		out15++
+		if m20-(60-m15) >= 30 {
+			out20++
+		}
+		return out20, out15
+	}
+	out20++
+	if m15-(60-m20) >= 30 {
+		out15++
+	}
+	return out20, out15
+}
+
+func minTime(a, b time.Time) time.Time {
+	if a.Before(b) {
+		return a
+	}
+	return b
+}
+
+func maxTime(a, b time.Time) time.Time {
+	if a.After(b) {
+		return a
+	}
+	return b
 }
 
 func normalizeHHMM(raw string) (string, error) {
