@@ -214,8 +214,8 @@ func (s *Store) GetProcessTexts(ctx context.Context, otstaffid string) ([]Proces
 	query := `
 		SELECT otstaffid, to_char(date_label, 'YYYY-MM-DD') AS date_label, process20txt, process15txt
 		FROM otdriverstd.periodresult
-		WHERE ($1 = '' AND date_label >= (CURRENT_DATE - INTERVAL '10 day'))
-		   OR ($1 <> '' AND otstaffid = $1)
+		WHERE (NULLIF(BTRIM($1), '') IS NULL AND date_label >= (CURRENT_DATE - INTERVAL '10 day'))
+		   OR (NULLIF(BTRIM($1), '') IS NOT NULL AND BTRIM(otstaffid) = BTRIM($1))
 		ORDER BY otstaffid, date_label DESC, id
 	`
 	rows, err := s.pool.Query(ctx, query, otstaffid)
