@@ -46,7 +46,7 @@ ALTER TABLE ot_driverstd.otdetails
   ALTER COLUMN endtime TYPE VARCHAR(16)
   USING COALESCE(regexp_substr(endtime::text, '[0-9]{2}:[0-9]{2}'), endtime::text);
 
-CREATE INDEX IF NOT EXISTS idx_otdetails_otid ON ot_driverstd.otdetails (otid);
+CREATE INDEX idx_otdetails_otid ON ot_driverstd.otdetails (otid);
 
 CREATE TABLE IF NOT EXISTS ot_driverstd.periodresult (
     id          VARCHAR(10) PRIMARY KEY,
@@ -64,4 +64,4 @@ CREATE TABLE IF NOT EXISTS ot_driverstd.periodresult (
     updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_periodresult_staff_date ON ot_driverstd.periodresult (otstaffid, date_label);
+CREATE INDEX idx_periodresult_staff_date ON ot_driverstd.periodresult (otstaffid, date_label);
