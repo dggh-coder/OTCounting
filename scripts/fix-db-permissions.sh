@@ -39,24 +39,24 @@ END \
 
 podman exec -i ot-opengauss gsql -d postgres -U omm -W "${GS_PASSWORD}" -c \
 "GRANT CONNECT,CREATE,TEMP ON DATABASE postgres TO ${APP_USER}; \
- GRANT USAGE,CREATE ON SCHEMA staffinfo TO ${APP_USER}; \
- GRANT USAGE,CREATE ON SCHEMA otdriverstd TO ${APP_USER}; \
- ALTER SCHEMA staffinfo OWNER TO ${APP_USER}; \
- ALTER SCHEMA otdriverstd OWNER TO ${APP_USER}; \
- GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA staffinfo TO ${APP_USER}; \
- GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA otdriverstd TO ${APP_USER}; \
- ALTER DEFAULT PRIVILEGES IN SCHEMA staffinfo GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ${APP_USER}; \
- ALTER DEFAULT PRIVILEGES IN SCHEMA otdriverstd GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ${APP_USER};"
+ GRANT USAGE,CREATE ON SCHEMA ot_staffinfo TO ${APP_USER}; \
+ GRANT USAGE,CREATE ON SCHEMA ot_driverstd TO ${APP_USER}; \
+ ALTER SCHEMA ot_staffinfo OWNER TO ${APP_USER}; \
+ ALTER SCHEMA ot_driverstd OWNER TO ${APP_USER}; \
+ GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ot_staffinfo TO ${APP_USER}; \
+ GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ot_driverstd TO ${APP_USER}; \
+ ALTER DEFAULT PRIVILEGES IN SCHEMA ot_staffinfo GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ${APP_USER}; \
+ ALTER DEFAULT PRIVILEGES IN SCHEMA ot_driverstd GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ${APP_USER};"
 
 podman exec -i ot-opengauss gsql -d postgres -U omm -W "${GS_PASSWORD}" -c \
 "DO \
 \$\$ \
 DECLARE r RECORD; \
 BEGIN \
-  FOR r IN SELECT schemaname, tablename FROM pg_tables WHERE schemaname IN ('staffinfo','otdriverstd') LOOP \
+  FOR r IN SELECT schemaname, tablename FROM pg_tables WHERE schemaname IN ('ot_staffinfo','ot_driverstd') LOOP \
     EXECUTE format('ALTER TABLE %I.%I OWNER TO %I', r.schemaname, r.tablename, '${APP_USER}'); \
   END LOOP; \
 END \
 \$\$;"
 
-echo "Permissions refreshed for user '${APP_USER}' in schemas staffinfo and otdriverstd."
+echo "Permissions refreshed for user '${APP_USER}' in schemas ot_staffinfo and ot_driverstd."

@@ -32,6 +32,7 @@ type staffInputRequest struct {
 	NameChi     string `json:"namechi"`
 	DisplayName string `json:"displayname"`
 	DomainName  string `json:"domainname"`
+	StaffGroup  string `json:"staffgroup"`
 }
 
 func (h *OTHandler) Input(w http.ResponseWriter, r *http.Request) {
@@ -219,6 +220,7 @@ func (h *OTHandler) StaffInput(w http.ResponseWriter, r *http.Request) {
 	req.NameChi = strings.TrimSpace(req.NameChi)
 	req.DisplayName = strings.TrimSpace(req.DisplayName)
 	req.DomainName = strings.TrimSpace(req.DomainName)
+	req.StaffGroup = strings.TrimSpace(req.StaffGroup)
 	if req.StaffID == "" {
 		http.Error(w, "staffid is required", http.StatusBadRequest)
 		return
@@ -230,6 +232,7 @@ func (h *OTHandler) StaffInput(w http.ResponseWriter, r *http.Request) {
 		NameChi:     req.NameChi,
 		DisplayName: req.DisplayName,
 		DomainName:  req.DomainName,
+		StaffGroup:  req.StaffGroup,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

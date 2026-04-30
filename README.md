@@ -118,10 +118,10 @@ The openGauss init SQL is also mounted to the DB container at:
 
 It creates:
 
-- `staffinfo.staffinfo`
-- `otdriverstd.otperiod`
-- `otdriverstd.otdetails`
-- `otdriverstd.periodresult`
+- `ot_staffinfo.staffinfo`
+- `ot_driverstd.otperiod`
+- `ot_driverstd.otdetails`
+- `ot_driverstd.periodresult`
 
 If these tables already exist after `podman compose ... up -d opengauss`, **do not** run `001_schema.sql` manually again.
 
@@ -168,8 +168,8 @@ For an **already initialized DB volume** (init scripts do not re-run), create/gr
 
 ```bash
 podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "CREATE USER ot_user WITH PASSWORD 'YOUR_APP_PASSWORD';"
-podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "GRANT CONNECT,CREATE,TEMP ON DATABASE postgres TO ot_user; GRANT USAGE,CREATE ON SCHEMA staffinfo TO ot_user; GRANT USAGE,CREATE ON SCHEMA otdriverstd TO ot_user; ALTER SCHEMA staffinfo OWNER TO ot_user; ALTER SCHEMA otdriverstd OWNER TO ot_user; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA staffinfo TO ot_user; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA otdriverstd TO ot_user; ALTER DEFAULT PRIVILEGES IN SCHEMA staffinfo GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ot_user; ALTER DEFAULT PRIVILEGES IN SCHEMA otdriverstd GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ot_user;"
-podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "DO $$ DECLARE r RECORD; BEGIN FOR r IN SELECT schemaname, tablename FROM pg_tables WHERE schemaname IN ('staffinfo','otdriverstd') LOOP EXECUTE format('ALTER TABLE %I.%I OWNER TO %I', r.schemaname, r.tablename, 'ot_user'); END LOOP; END $$;"
+podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "GRANT CONNECT,CREATE,TEMP ON DATABASE postgres TO ot_user; GRANT USAGE,CREATE ON SCHEMA ot_staffinfo TO ot_user; GRANT USAGE,CREATE ON SCHEMA ot_driverstd TO ot_user; ALTER SCHEMA ot_staffinfo OWNER TO ot_user; ALTER SCHEMA ot_driverstd OWNER TO ot_user; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ot_staffinfo TO ot_user; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ot_driverstd TO ot_user; ALTER DEFAULT PRIVILEGES IN SCHEMA ot_staffinfo GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ot_user; ALTER DEFAULT PRIVILEGES IN SCHEMA ot_driverstd GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ot_user;"
+podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "DO $$ DECLARE r RECORD; BEGIN FOR r IN SELECT schemaname, tablename FROM pg_tables WHERE schemaname IN ('ot_staffinfo','ot_driverstd') LOOP EXECUTE format('ALTER TABLE %I.%I OWNER TO %I', r.schemaname, r.tablename, 'ot_user'); END LOOP; END $$;"
 ```
 
 Or run the helper (recommended):
@@ -249,11 +249,11 @@ curl -s -X POST http://localhost:8080/api/ot/input \
   }'
 ```
 
-3) Confirm rows were persisted to `otdriverstd.otdetails`:
+3) Confirm rows were persisted to `ot_driverstd.otdetails`:
 
 ```bash
 podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_PASSWORD' \
-  -c "SELECT id, otid, type, starttime, endtime, created_at FROM otdriverstd.otdetails ORDER BY created_at DESC LIMIT 5;"
+  -c "SELECT id, otid, type, starttime, endtime, created_at FROM ot_driverstd.otdetails ORDER BY created_at DESC LIMIT 5;"
 ```
 
 4) Open the frontend and run the same flow in UI:

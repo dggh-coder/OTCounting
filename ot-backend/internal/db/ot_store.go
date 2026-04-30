@@ -16,35 +16,37 @@ type Staff struct {
 	NameChi     string `json:"namechi"`
 	DisplayName string `json:"displayname"`
 	DomainName  string `json:"domainname"`
+	StaffGroup  string `json:"staffgroup"`
 }
 
 func (s *Store) UpsertStaff(ctx context.Context, in Staff) (Staff, error) {
 	updateTag, err := s.pool.Exec(ctx, `
-		UPDATE staffinfo.staffinfo
+		UPDATE ot_staffinfo.staffinfo
 		SET nameeng = $2,
 		    namechi = $3,
 		    displayname = $4,
-		    domainname = $5
+		    domainname = $5,
+		    staffgroup = $6
 		WHERE staffid = $1
-	`, in.StaffID, in.NameEng, in.NameChi, in.DisplayName, in.DomainName)
+	`, in.StaffID, in.NameEng, in.NameChi, in.DisplayName, in.DomainName, in.StaffGroup)
 	if err != nil {
 		return Staff{}, err
 	}
 	if updateTag.RowsAffected() == 0 {
 		if _, err := s.pool.Exec(ctx, `
-			INSERT INTO staffinfo.staffinfo (staffid, nameeng, namechi, displayname, domainname)
-			VALUES ($1, $2, $3, $4, $5)
-		`, in.StaffID, in.NameEng, in.NameChi, in.DisplayName, in.DomainName); err != nil {
+			INSERT INTO ot_staffinfo.staffinfo (staffid, nameeng, namechi, displayname, domainname, staffgroup)
+			VALUES ($1, $2, $3, $4, $5, $6)
+		`, in.StaffID, in.NameEng, in.NameChi, in.DisplayName, in.DomainName, in.StaffGroup); err != nil {
 			return Staff{}, err
 		}
 	}
 
 	var out Staff
 	if err := s.pool.QueryRow(ctx, `
-		SELECT staffid, nameeng, namechi, displayname, domainname
-		FROM staffinfo.staffinfo
+		SELECT staffid, nameeng, namechi, displayname, domainname, staffgroup
+		FROM ot_staffinfo.staffinfo
 		WHERE staffid = $1
-	`, in.StaffID).Scan(&out.StaffID, &out.NameEng, &out.NameChi, &out.DisplayName, &out.DomainName); err != nil {
+	`, in.StaffID).Scan(&out.StaffID, &out.NameEng, &out.NameChi, &out.DisplayName, &out.DomainName, &out.StaffGroup); err != nil {
 		return Staff{}, err
 	}
 	return out, nil
@@ -90,12 +92,12 @@ type timeSpan struct {
 
 func (s *Store) ListStaff(ctx context.Context) ([]Staff, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT s.staffid, s.nameeng, s.namechi, s.displayname, s.domainname
-		FROM staffinfo.staffinfo s
+		SELECT s.staffid, s.nameeng, s.namechi, s.displayname, s.domainname, s.staffgroup
+		FROM ot_staffinfo.staffinfo s
 		UNION
-		SELECT p.otstaffid AS staffid, '' AS nameeng, '' AS namechi, p.otstaffid AS displayname, '' AS domainname
-		FROM otdriverstd.otperiod p
-		WHERE NOT EXISTS (SELECT 1 FROM staffinfo.staffinfo s2 WHERE s2.staffid = p.otstaffid)
+		SELECT p.otstaffid AS staffid, '' AS nameeng, '' AS namechi, p.otstaffid AS displayname, '' AS domainname, '' AS staffgroup
+		FROM ot_driverstd.otperiod p
+		WHERE NOT EXISTS (SELECT 1 FROM ot_staffinfo.staffinfo s2 WHERE s2.staffid = p.otstaffid)
 		ORDER BY displayname, staffid
 	`)
 	if err != nil {
@@ -106,7 +108,7 @@ func (s *Store) ListStaff(ctx context.Context) ([]Staff, error) {
 	out := []Staff{}
 	for rows.Next() {
 		var r Staff
-		if err := rows.Scan(&r.StaffID, &r.NameEng, &r.NameChi, &r.DisplayName, &r.DomainName); err != nil {
+		if err := rows.Scan(&r.StaffID, &r.NameEng, &r.NameChi, &r.DisplayName, &r.DomainName, &r.StaffGroup); err != nil {
 			return nil, err
 		}
 		out = append(out, r)
@@ -125,11 +127,11 @@ func (s *Store) SavePeriodEntries(ctx context.Context, otstaffid, date, period s
 	if err != nil {
 		return nil, err
 	}
-	if _, err := tx.Exec(ctx, `DELETE FROM otdriverstd.otdetails WHERE otid = $1`, periodID); err != nil {
+	if _, err := tx.Exec(ctx, `DELETE FROM ot_driverstd.otdetails WHERE otid = $1`, periodID); err != nil {
 		return nil, err
 	}
 	for _, e := range entries {
-		if _, err := tx.Exec(ctx, `INSERT INTO otdriverstd.otdetails (otid, type, starttime, endtime, inputby) VALUES ($1, $2, $3, $4, $5)`, periodID, e.Type, e.StartTime, e.EndTime, nullableTrim(e.InputBy)); err != nil {
+		if _, err := tx.Exec(ctx, `INSERT INTO ot_driverstd.otdetails (otid, type, starttime, endtime, inputby) VALUES ($1, $2, $3, $4, $5)`, periodID, e.Type, e.StartTime, e.EndTime, nullableTrim(e.InputBy)); err != nil {
 			return nil, err
 		}
 	}
@@ -159,8 +161,8 @@ func getEntriesByFilters(ctx context.Context, q interface {
 			       d.starttime,
 			       d.endtime,
 			       d.inputby
-		FROM otdriverstd.otdetails d
-		JOIN otdriverstd.otperiod p ON p.id = d.otid
+		FROM ot_driverstd.otdetails d
+		JOIN ot_driverstd.otperiod p ON p.id = d.otid
 		WHERE ($1 = '' OR p.otstaffid = $1)
 		  AND ($2 = '' OR to_char(p.date, 'YYYY-MM-DD') = $2)
 		  AND (NULLIF(BTRIM($3), '') IS NULL OR p.period = $3)
@@ -188,7 +190,7 @@ func (s *Store) GetMonthlyTotals(ctx context.Context, year int, month int) ([]Mo
 		       EXTRACT(MONTH FROM date_label)::int AS m,
 		       COALESCE(SUM(totalhrs20),0)::int,
 		       COALESCE(SUM(totalhrs15),0)::int
-		FROM otdriverstd.periodresult
+		FROM ot_driverstd.periodresult
 		WHERE ($1 = 0 OR EXTRACT(YEAR FROM date_label)::int = $1)
 		  AND ($2 = 0 OR EXTRACT(MONTH FROM date_label)::int = $2)
 		GROUP BY y, m
@@ -213,7 +215,7 @@ func (s *Store) GetMonthlyTotals(ctx context.Context, year int, month int) ([]Mo
 func (s *Store) GetProcessTexts(ctx context.Context, otstaffid string) ([]ProcessTextRow, error) {
 	query := `
 		SELECT otstaffid, to_char(date_label, 'YYYY-MM-DD') AS date_label, process20txt, process15txt
-		FROM otdriverstd.periodresult
+		FROM ot_driverstd.periodresult
 		WHERE (NULLIF(BTRIM($1), '') IS NULL AND date_label >= (CURRENT_DATE - INTERVAL '10 day'))
 		   OR (NULLIF(BTRIM($1), '') IS NOT NULL AND BTRIM(otstaffid) = BTRIM($1))
 		ORDER BY otstaffid, date_label DESC, id
@@ -246,15 +248,15 @@ func (s *Store) DeleteEntryAndRebuild(ctx context.Context, detailID int64) error
 	var otstaffid, date, period string
 	err = tx.QueryRow(ctx, `
 		SELECT p.id, p.otstaffid, to_char(p.date, 'YYYY-MM-DD'), p.period
-		FROM otdriverstd.otdetails d
-		JOIN otdriverstd.otperiod p ON p.id = d.otid
+		FROM ot_driverstd.otdetails d
+		JOIN ot_driverstd.otperiod p ON p.id = d.otid
 		WHERE d.id = $1
 	`, detailID).Scan(&otid, &otstaffid, &date, &period)
 	if err != nil {
 		return err
 	}
 
-	if _, err := tx.Exec(ctx, `DELETE FROM otdriverstd.otdetails WHERE id = $1`, detailID); err != nil {
+	if _, err := tx.Exec(ctx, `DELETE FROM ot_driverstd.otdetails WHERE id = $1`, detailID); err != nil {
 		return err
 	}
 	if err := s.rebuildPeriodResultTx(ctx, tx, otid, otstaffid, date, period); err != nil {
@@ -264,7 +266,7 @@ func (s *Store) DeleteEntryAndRebuild(ctx context.Context, detailID int64) error
 }
 
 func (s *Store) rebuildPeriodResultTx(ctx context.Context, tx pgx.Tx, periodID int64, otstaffid, date, period string) error {
-	rows, err := tx.Query(ctx, `SELECT id, type, starttime::text, endtime::text FROM otdriverstd.otdetails WHERE otid = $1 ORDER BY id`, periodID)
+	rows, err := tx.Query(ctx, `SELECT id, type, starttime::text, endtime::text FROM ot_driverstd.otdetails WHERE otid = $1 ORDER BY id`, periodID)
 	if err != nil {
 		return err
 	}
@@ -338,7 +340,7 @@ func (s *Store) rebuildPeriodResultTx(ctx context.Context, tx pgx.Tx, periodID i
 	process15 := formatProcessText(rate15Parts, hours15, mins15)
 	total20, total15 := mixedRoundHours(hours20, mins20, hours15, mins15)
 	updateTag, err := tx.Exec(ctx, `
-		UPDATE otdriverstd.periodresult
+		UPDATE ot_driverstd.periodresult
 		SET otstaffid = $2, date_label = $3::date, process20txt = $4, process15txt = $5,
 		    hours20 = $6, hours15 = $7, mins20 = $8, mins15 = $9, totalhrs20 = $10, totalhrs15 = $11, updated_at = CURRENT_TIMESTAMP
 		WHERE id = $1
@@ -349,7 +351,7 @@ func (s *Store) rebuildPeriodResultTx(ctx context.Context, tx pgx.Tx, periodID i
 	}
 	if updateTag.RowsAffected() == 0 {
 		_, err = tx.Exec(ctx, `
-				INSERT INTO otdriverstd.periodresult
+				INSERT INTO ot_driverstd.periodresult
 				(id, otstaffid, date_label, process20txt, process15txt, hours20, hours15, mins20, mins15, totalhrs20, totalhrs15)
 				VALUES ($1, $2, $3::date, $4, $5, $6, $7, $8, $9, $10, $11)
 			`, id, otstaffid, date, process20, process15,
@@ -379,17 +381,17 @@ func parseDateRange(date, start, end string) (timeSpan, error) {
 
 func upsertOTPeriod(ctx context.Context, tx pgx.Tx, otstaffid, date, period string) (int64, error) {
 	var id int64
-	err := tx.QueryRow(ctx, `SELECT id FROM otdriverstd.otperiod WHERE otstaffid = $1 AND date = $2::date AND period = $3`, otstaffid, date, period).Scan(&id)
+	err := tx.QueryRow(ctx, `SELECT id FROM ot_driverstd.otperiod WHERE otstaffid = $1 AND date = $2::date AND period = $3`, otstaffid, date, period).Scan(&id)
 	if err == nil {
 		return id, nil
 	}
 	if err != pgx.ErrNoRows {
 		return 0, err
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO otdriverstd.otperiod (date, otstaffid, period, remarks) VALUES ($1::date, $2, $3, '')`, date, otstaffid, period); err != nil {
+	if _, err := tx.Exec(ctx, `INSERT INTO ot_driverstd.otperiod (date, otstaffid, period, remarks) VALUES ($1::date, $2, $3, '')`, date, otstaffid, period); err != nil {
 		return 0, err
 	}
-	if err := tx.QueryRow(ctx, `SELECT id FROM otdriverstd.otperiod WHERE otstaffid = $1 AND date = $2::date AND period = $3`, otstaffid, date, period).Scan(&id); err != nil {
+	if err := tx.QueryRow(ctx, `SELECT id FROM ot_driverstd.otperiod WHERE otstaffid = $1 AND date = $2::date AND period = $3`, otstaffid, date, period).Scan(&id); err != nil {
 		return 0, err
 	}
 	return id, nil
