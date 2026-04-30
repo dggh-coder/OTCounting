@@ -116,6 +116,17 @@ func (s *Store) ListStaff(ctx context.Context) ([]Staff, error) {
 	return out, rows.Err()
 }
 
+func (s *Store) DeleteStaff(ctx context.Context, staffID string) error {
+	tag, err := s.pool.Exec(ctx, `DELETE FROM ot_staffinfo.staffinfo WHERE staffid = $1`, strings.TrimSpace(staffID))
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("staff not found")
+	}
+	return nil
+}
+
 func (s *Store) SavePeriodEntries(ctx context.Context, otstaffid, date, period string, entries []EntryInput) ([]SavedEntry, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -355,7 +366,7 @@ func (s *Store) rebuildPeriodResultTx(ctx context.Context, tx pgx.Tx, periodID i
 				(id, otstaffid, date_label, process20txt, process15txt, hours20, hours15, mins20, mins15, totalhrs20, totalhrs15)
 				VALUES ($1, $2, $3::date, $4, $5, $6, $7, $8, $9, $10, $11)
 			`, id, otstaffid, date, process20, process15,
-				hours20, hours15, mins20, mins15, total20, total15)
+			hours20, hours15, mins20, mins15, total20, total15)
 		if err != nil {
 			return err
 		}
