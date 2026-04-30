@@ -163,6 +163,10 @@ func (h *OTHandler) ProcessTexts(w http.ResponseWriter, r *http.Request) {
 
 func (h *OTHandler) DeleteEntry(w http.ResponseWriter, r *http.Request) {
 	setJSON(w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	if r.Method != http.MethodDelete {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -184,6 +188,19 @@ func (h *OTHandler) Staff(w http.ResponseWriter, r *http.Request) {
 	setJSON(w)
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	if r.Method == http.MethodDelete {
+		staffID := strings.TrimSpace(r.URL.Query().Get("staffid"))
+		if staffID == "" {
+			http.Error(w, "staffid is required", http.StatusBadRequest)
+			return
+		}
+		if err := h.Store.DeleteStaff(r.Context(), staffID); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"deleted": staffID})
 		return
 	}
 	if r.Method != http.MethodGet {
@@ -244,7 +261,7 @@ func (h *OTHandler) StaffInput(w http.ResponseWriter, r *http.Request) {
 func setJSON(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
 	w.Header().Set("Content-Type", "application/json")
 }
 
