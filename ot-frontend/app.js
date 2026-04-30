@@ -3,24 +3,16 @@ const API_BASE = window.__API_BASE__
 
 const state = {
   staff: [],
-  selectedStaff: "",
-  date: "",
-  remarks: "",
-  rows: [],
-  existing: []
+  groups: [],
+  nextGroupId: 1
 };
 
-function endpoint(path) {
-  return API_BASE ? `${API_BASE}${path}` : path;
-}
-
-function rowTemplate() {
-  return { type: "00", startTime: "", endTime: "" };
-}
+function endpoint(path) { return API_BASE ? `${API_BASE}${path}` : path; }
+function rowTemplate() { return { type: "00", startTime: "", endTime: "" }; }
+function createGroup() { return { id: state.nextGroupId++, staff: "", date: "", remarks: "", expanded: false, rows: [], existing: [], msg: "" }; }
 
 function switchTab(tabName) {
-  const names = ["ot", "staff"];
-  names.forEach((n) => {
+  ["ot", "staff"].forEach((n) => {
     const section = document.getElementById(`tab-${n}`);
     const button = document.getElementById(`tab-btn-${n}`);
     if (section) section.classList.toggle("hidden", n !== tabName);
@@ -28,265 +20,94 @@ function switchTab(tabName) {
   });
 }
 
-function renderStaffList() {
-  const root = document.getElementById("staff-list");
-  root.innerHTML = "";
-  if (state.staff.length === 0) {
-    root.textContent = "No staff found.";
-    return;
-  }
+function fillStaffOptions(selected) {
+  return ["<option value=''>-- Select --</option>"]
+    .concat(state.staff.filter((s) => (s.staffgroup || "").trim().toLowerCase() === "driver")
+      .map((s) => `<option value="${s.staffid}" ${selected === s.staffid ? "selected" : ""}>${s.displayname || s.staffid} (${s.staffid})</option>`)).join("");
+}
+
+function renderStaffList() { /* unchanged */
+  const root = document.getElementById("staff-list"); root.innerHTML = "";
+  if (state.staff.length === 0) { root.textContent = "No staff found."; return; }
   state.staff.forEach((s) => {
-    const div = document.createElement("div");
-    div.className = "staff-item";
-    div.innerHTML = `
-      <span>ID: ${s.staffid} | Eng: ${s.nameeng || ""} | Chi: ${s.namechi || ""} | Display: ${s.displayname || ""} | Domain: ${s.domainname || ""} | Group: ${s.staffgroup || ""}</span>
-      <button data-action="delete-staff" data-staffid="${s.staffid}" type="button">Delete</button>
-    `;
-    div.querySelector("[data-action='delete-staff']").addEventListener("click", async (e) => {
-      await deleteStaff(e.target.dataset.staffid);
-    });
+    const div = document.createElement("div"); div.className = "staff-item";
+    div.innerHTML = `<span>ID: ${s.staffid} | Eng: ${s.nameeng || ""} | Chi: ${s.namechi || ""} | Display: ${s.displayname || ""} | Domain: ${s.domainname || ""} | Group: ${s.staffgroup || ""}</span><button data-action="delete-staff" data-staffid="${s.staffid}" type="button">Delete</button>`;
+    div.querySelector("[data-action='delete-staff']").addEventListener("click", async (e) => deleteStaff(e.target.dataset.staffid));
     root.appendChild(div);
   });
 }
 
-function fillStaffSelects() {
-  const otSelect = document.getElementById("staff-select");
-  if (otSelect) otSelect.innerHTML = "<option value=''>-- Select --</option>";
+function renderGroups() {
+  const root = document.getElementById("ot-groups");
+  root.innerHTML = "";
+  state.groups.forEach((g) => {
+    const sec = document.createElement("section"); sec.className = "card";
+    sec.innerHTML = `<h2>OT Input #${g.id}</h2>
+    <div class="row">
+      <label>Staff<select data-k="staff">${fillStaffOptions(g.staff)}</select></label>
+      <label>Date<input data-k="date" type="date" value="${g.date}"></label>
+      <label>Remarks<input data-k="remarks" type="text" value="${g.remarks}" placeholder="optional"></label>
+      <button data-action="next" type="button">Next</button>
+      <button data-action="remove" type="button">-</button>
+    </div>
+    <div class="msg select-msg">${g.msg || ""}</div>
+    <div class="period-area ${g.expanded ? "" : "hidden"}">
+      <h3>Existing Records (Read-only, can delete)</h3>
+      <table><thead><tr><th>Type</th><th>Start (HH:MM)</th><th>End (HH:MM)</th><th></th></tr></thead><tbody class="existing-body"></tbody></table>
+      <h3>New Records</h3><button data-action="add-row" type="button">Add Row</button>
+      <table><thead><tr><th>Type</th><th>Start (HH:MM)</th><th>End (HH:MM)</th><th></th></tr></thead><tbody class="entry-body"></tbody></table>
+      <div class="actions"><button data-action="confirm" type="button">確認 Confirm</button></div>
+      <div class="msg input-msg"></div>
+    </div>`;
 
-  state.staff
-    .filter((s) => (s.staffgroup || "").trim().toLowerCase() === "driver")
-    .forEach((s) => {
-    if (otSelect) {
-      const opt1 = document.createElement("option");
-      opt1.value = s.staffid;
-      opt1.textContent = `${s.displayname || s.staffid} (${s.staffid})`;
-      otSelect.appendChild(opt1);
-    }
+    sec.querySelectorAll("[data-k]").forEach((el) => el.addEventListener("change", (e) => { g[e.target.dataset.k] = e.target.value.trim(); }));
+    sec.querySelector("[data-action='remove']").addEventListener("click", () => { state.groups = state.groups.filter((x) => x.id !== g.id); if (!state.groups.length) state.groups = [createGroup()]; renderGroups(); });
+    sec.querySelector("[data-action='next']").addEventListener("click", async () => {
+      if (!g.staff || !g.date) { g.msg = "Please select both staff and date."; renderGroups(); return; }
+      const dup = state.groups.find((x) => x.id !== g.id && x.staff === g.staff && x.date === g.date);
+      if (dup) { g.msg = "Same Staff + Date already exists on this page."; renderGroups(); return; }
+      g.msg = ""; g.expanded = true; if (g.rows.length === 0) g.rows = [rowTemplate()];
+      await loadExistingRecords(g); renderGroups();
     });
-}
 
-async function loadStaff() {
-  try {
-    const resp = await fetch(endpoint("/api/staff"));
-    const data = await resp.json();
-    state.staff = data.staff || [];
-    fillStaffSelects();
-    renderStaffList();
-  } catch {
-    document.getElementById("select-msg").textContent = "Cannot load staff list.";
-  }
-}
-
-async function saveStaff() {
-  const msg = document.getElementById("staff-msg");
-  msg.textContent = "";
-  msg.style.color = "#b00020";
-  const staffid = document.getElementById("staff-id").value.trim();
-  const nameeng = document.getElementById("staff-nameeng").value.trim();
-  const namechi = document.getElementById("staff-namechi").value.trim();
-  const displayname = document.getElementById("staff-displayname").value.trim();
-  const domainname = document.getElementById("staff-domainname").value.trim();
-  const staffgroup = document.getElementById("staff-staffgroup").value.trim();
-  if (!staffid) {
-    msg.textContent = "Staff No (ID) is required.";
-    return;
-  }
-
-  const resp = await fetch(endpoint("/api/staff/input"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ staffid, nameeng, namechi, displayname, domainname, staffgroup })
-  });
-  if (!resp.ok) {
-    msg.textContent = await resp.text();
-    return;
-  }
-
-  ["staff-id", "staff-nameeng", "staff-namechi", "staff-displayname", "staff-domainname", "staff-staffgroup"].forEach((id) => {
-    document.getElementById(id).value = "";
-  });
-  msg.style.color = "#0a7a2f";
-  msg.textContent = "Staff saved.";
-  await loadStaff();
-}
-
-async function deleteStaff(staffid) {
-  const msg = document.getElementById("staff-msg");
-  msg.textContent = "";
-  msg.style.color = "#b00020";
-  const resp = await fetch(endpoint(`/api/staff?staffid=${encodeURIComponent(staffid)}`), { method: "DELETE" });
-  if (!resp.ok) {
-    msg.textContent = await resp.text();
-    return;
-  }
-  msg.style.color = "#0a7a2f";
-  msg.textContent = `Staff ${staffid} deleted.`;
-  await loadStaff();
-}
-
-function renderRows() {
-  const body = document.getElementById("entry-body");
-  body.innerHTML = "";
-  state.rows.forEach((r, idx) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td><select data-k="type"><option value="00" ${r.type === "00" ? "selected" : ""}>OT</option><option value="01" ${r.type === "01" ? "selected" : ""}>Break</option></select></td>
-      <td><input data-k="startTime" placeholder="HH:MM" value="${r.startTime}"></td>
-      <td><input data-k="endTime" placeholder="HH:MM" value="${r.endTime}"></td>
-      <td><button data-action="del" type="button">Delete</button></td>
-    `;
-    tr.querySelectorAll("[data-k]").forEach((el) => {
-      el.addEventListener("change", (e) => {
-        state.rows[idx][e.target.dataset.k] = e.target.value.trim();
-      });
+    const period = sec.querySelector(".period-area");
+    const existingBody = sec.querySelector(".existing-body");
+    existingBody.innerHTML = g.existing.length ? "" : `<tr><td colspan="4">No existing records</td></tr>`;
+    g.existing.forEach((r) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${r.type === "00" ? "OT" : "Break"}</td><td>${r.startTime}</td><td>${r.endTime}</td><td><button type="button">Delete</button></td>`;
+      tr.querySelector("button").addEventListener("click", async () => { await deleteExistingRecord(g, r.id); });
+      existingBody.appendChild(tr);
     });
-    tr.querySelector("[data-action='del']").addEventListener("click", () => {
-      state.rows.splice(idx, 1);
-      renderRows();
+    const entryBody = sec.querySelector(".entry-body"); entryBody.innerHTML = "";
+    g.rows.forEach((r, idx) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td><select data-k="type"><option value="00" ${r.type === "00" ? "selected" : ""}>OT</option><option value="01" ${r.type === "01" ? "selected" : ""}>Break</option></select></td><td><input data-k="startTime" placeholder="HH:MM" value="${r.startTime}"></td><td><input data-k="endTime" placeholder="HH:MM" value="${r.endTime}"></td><td><button type="button">Delete</button></td>`;
+      tr.querySelectorAll("[data-k]").forEach((el) => el.addEventListener("change", (e) => { g.rows[idx][e.target.dataset.k] = e.target.value.trim(); }));
+      tr.querySelector("button").addEventListener("click", () => { g.rows.splice(idx, 1); renderGroups(); });
+      entryBody.appendChild(tr);
     });
-    body.appendChild(tr);
+    sec.querySelector("[data-action='add-row']").addEventListener("click", () => { g.rows.push(rowTemplate()); renderGroups(); });
+    sec.querySelector("[data-action='confirm']").addEventListener("click", async () => { await confirmInput(g, sec.querySelector('.input-msg')); });
+
+    root.appendChild(sec);
   });
 }
 
-function renderExisting() {
-  const body = document.getElementById("existing-body");
-  body.innerHTML = "";
-  if (state.existing.length === 0) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="4">No existing records</td>`;
-    body.appendChild(tr);
-    return;
-  }
-  state.existing.forEach((r) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${r.type === "00" ? "OT" : "Break"}</td>
-      <td>${r.startTime}</td>
-      <td>${r.endTime}</td>
-      <td><button data-action="delete-existing" data-id="${r.id}" type="button">Delete</button></td>
-    `;
-    tr.querySelector("[data-action='delete-existing']").addEventListener("click", async (e) => {
-      await deleteExistingRecord(e.target.dataset.id);
-    });
-    body.appendChild(tr);
-  });
+async function loadStaff() { const resp = await fetch(endpoint('/api/staff')); const data = await resp.json(); state.staff = data.staff || []; renderStaffList(); renderGroups(); }
+async function loadExistingRecords(g) { const resp = await fetch(endpoint(`/api/ot/entries?otstaffid=${encodeURIComponent(g.staff)}&date=${encodeURIComponent(g.date)}`)); const data = await resp.json(); g.existing = (data.entries||[]).map((e)=>({id:e.id,type:e.type,startTime:e.startTime,endTime:e.endTime})); }
+async function deleteExistingRecord(g,id){ const resp=await fetch(endpoint(`/api/ot/entry?id=${encodeURIComponent(id)}`),{method:'DELETE'}); if(resp.ok){await loadExistingRecords(g); renderGroups();}}
+async function confirmInput(g,msgEl){ msgEl.textContent=''; const p=/^([01]\d|2[0-3]):[0-5]\d$/; for(const r of g.rows){ if(!r.startTime||!r.endTime||!p.test(r.startTime)||!p.test(r.endTime)){msgEl.textContent='Start and End must be HH:MM and cannot be empty.';return;}}
+ const all=[...g.existing.map((e)=>({type:e.type,startTime:e.startTime,endTime:e.endTime})),...g.rows.map((r)=>({type:r.type,startTime:r.startTime,endTime:r.endTime}))];
+ if(!all.length){msgEl.textContent='No records to confirm.';return;} const payload={otstaffid:g.staff,date:g.date,remarks:g.remarks,entries:all}; const resp=await fetch(endpoint('/api/ot/input'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); if(!resp.ok){msgEl.textContent=await resp.text(); return;} g.rows=[]; await loadExistingRecords(g); renderGroups(); }
+
+async function saveStaff(){/* unchanged simplified */
+  const msg=document.getElementById('staff-msg'); msg.textContent=''; msg.style.color='#b00020';
+  const staffid=document.getElementById('staff-id').value.trim(); const nameeng=document.getElementById('staff-nameeng').value.trim(); const namechi=document.getElementById('staff-namechi').value.trim(); const displayname=document.getElementById('staff-displayname').value.trim(); const domainname=document.getElementById('staff-domainname').value.trim(); const staffgroup=document.getElementById('staff-staffgroup').value.trim(); if(!staffid){msg.textContent='Staff No (ID) is required.';return;}
+  const resp=await fetch(endpoint('/api/staff/input'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({staffid,nameeng,namechi,displayname,domainname,staffgroup})}); if(!resp.ok){msg.textContent=await resp.text();return;} ['staff-id','staff-nameeng','staff-namechi','staff-displayname','staff-domainname','staff-staffgroup'].forEach((id)=>document.getElementById(id).value=''); msg.style.color='#0a7a2f'; msg.textContent='Staff saved.'; await loadStaff();
 }
+async function deleteStaff(staffid){const msg=document.getElementById('staff-msg'); msg.textContent=''; const resp=await fetch(endpoint(`/api/staff?staffid=${encodeURIComponent(staffid)}`),{method:'DELETE'}); if(!resp.ok){msg.textContent=await resp.text();return;} msg.style.color='#0a7a2f'; msg.textContent=`Staff ${staffid} deleted.`; await loadStaff();}
 
-async function deleteExistingRecord(id) {
-  const resp = await fetch(endpoint(`/api/ot/entry?id=${encodeURIComponent(id)}`), { method: "DELETE" });
-  if (!resp.ok) {
-    document.getElementById("input-msg").textContent = await resp.text();
-    return;
-  }
-  await loadExistingRecords();
-}
-
-function showStep(stepId) {
-  ["step-select", "step-input"].forEach((id) => {
-    document.getElementById(id).classList.toggle("hidden", id !== stepId);
-  });
-}
-
-function resetToStart(message = "") {
-  state.rows = [];
-  state.existing = [];
-  document.getElementById("input-msg").textContent = "";
-  document.getElementById("select-msg").textContent = message;
-  showStep("step-select");
-}
-
-async function loadExistingRecords() {
-  const url = endpoint(`/api/ot/entries?otstaffid=${encodeURIComponent(state.selectedStaff)}&date=${encodeURIComponent(state.date)}`);
-  const resp = await fetch(url);
-  const data = await resp.json();
-  state.existing = (data.entries || []).map((e) => ({ id: e.id, type: e.type, startTime: e.startTime, endTime: e.endTime }));
-  renderExisting();
-}
-
-async function confirmInput() {
-  const msg = document.getElementById("input-msg");
-  msg.textContent = "";
-  const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
-  for (const r of state.rows) {
-    if (!r.startTime || !r.endTime || !timePattern.test(r.startTime) || !timePattern.test(r.endTime)) {
-      msg.textContent = "Start and End must be HH:MM and cannot be empty.";
-      return;
-    }
-  }
-
-  const existingAsEntries = state.existing.map((e) => ({ type: e.type, startTime: e.startTime, endTime: e.endTime }));
-  const newEntries = state.rows.map((r) => ({ type: r.type, startTime: r.startTime, endTime: r.endTime }));
-  const allEntries = [...existingAsEntries, ...newEntries];
-  if (allEntries.length === 0) {
-    msg.textContent = "No records to confirm.";
-    return;
-  }
-
-  const payload = { otstaffid: state.selectedStaff, date: state.date, entries: allEntries };
-  payload.remarks = state.remarks;
-  const resp = await fetch(endpoint("/api/ot/input"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  if (!resp.ok) {
-    msg.textContent = await resp.text();
-    return;
-  }
-
-  state.rows = [];
-  await loadExistingRecords();
-  renderRows();
-  msg.style.color = "#0a7a2f";
-  msg.textContent = "Confirmed and recalculated.";
-}
-
-function bindEvents() {
-  var tabButtons = document.querySelectorAll(".tab-btn");
-  for (var i = 0; i < tabButtons.length; i++) {
-    var btn = tabButtons[i];
-    btn.addEventListener("click", function () {
-      var tab = this.getAttribute("data-tab");
-      switchTab(tab);
-    });
-  }
-  const saveStaffBtn = document.getElementById("save-staff");
-  if (saveStaffBtn) {
-    saveStaffBtn.addEventListener("click", saveStaff);
-  }
-  const toPeriodBtn = document.getElementById("to-period");
-  if (toPeriodBtn) toPeriodBtn.addEventListener("click", async () => {
-    state.selectedStaff = document.getElementById("staff-select").value;
-    state.date = document.getElementById("work-date").value;
-    state.remarks = document.getElementById("work-remarks").value.trim();
-    if (!state.selectedStaff || !state.date) {
-      document.getElementById("select-msg").textContent = "Please select both staff and date.";
-      return;
-    }
-    document.getElementById("select-msg").textContent = "";
-    state.rows = [rowTemplate()];
-    document.getElementById("context").textContent = `${state.selectedStaff} / ${state.date}`;
-    await loadExistingRecords();
-    renderRows();
-    showStep("step-input");
-  });
-
-  const addRowBtn = document.getElementById("add-row");
-  if (addRowBtn) addRowBtn.addEventListener("click", () => {
-    state.rows.push(rowTemplate());
-    renderRows();
-  });
-  const cancelInputBtn = document.getElementById("cancel-input");
-  if (cancelInputBtn) cancelInputBtn.addEventListener("click", () => resetToStart());
-  const confirmBtn = document.getElementById("confirm");
-  if (confirmBtn) confirmBtn.addEventListener("click", confirmInput);
-}
-
-function init() {
-  bindEvents();
-  loadStaff();
-  showStep("step-select");
-  switchTab("ot");
-}
-
-document.addEventListener("DOMContentLoaded", init);
+function bindEvents(){ document.querySelectorAll('.tab-btn').forEach((btn)=>btn.addEventListener('click', function(){switchTab(this.getAttribute('data-tab'));})); document.getElementById('save-staff')?.addEventListener('click',saveStaff); document.getElementById('add-group')?.addEventListener('click',()=>{state.groups.push(createGroup()); renderGroups();}); }
+function init(){ state.groups=[createGroup()]; bindEvents(); loadStaff(); switchTab('ot'); }
+document.addEventListener('DOMContentLoaded', init);
