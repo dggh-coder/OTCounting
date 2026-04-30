@@ -21,6 +21,7 @@ services:
       network: host
     container_name: ot-backend
     env_file:
+      - ./opengauss.env
       - ./.env
     environment:
       DB_PASSWORD_FILE: /run/secrets/ot_db_password

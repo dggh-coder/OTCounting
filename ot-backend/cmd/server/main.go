@@ -29,9 +29,17 @@ func main() {
 
 	calcService := service.NewCalculateService(engine.NewCalculator(), store)
 	calcHandler := &api.CalculateHandler{Service: calcService}
+	otHandler := &api.OTHandler{Store: store}
 
 	mux := http.NewServeMux()
 	mux.Handle("/api/calculate", calcHandler)
+	mux.HandleFunc("/api/ot/input", otHandler.Input)
+	mux.HandleFunc("/api/ot/entries", otHandler.Get)
+	mux.HandleFunc("/api/ot/monthly", otHandler.Monthly)
+	mux.HandleFunc("/api/ot/entry", otHandler.DeleteEntry)
+	mux.HandleFunc("/api/ot/process-texts", otHandler.ProcessTexts)
+	mux.HandleFunc("/api/staff", otHandler.Staff)
+	mux.HandleFunc("/api/staff/input", otHandler.StaffInput)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
 
 	addr := ":8080"
@@ -47,6 +55,9 @@ func databaseURLFromEnv() (string, error) {
 	name := envOr("DB_NAME", "postgres")
 	user := envOr("DB_USER", "ot_user")
 	password := os.Getenv("DB_PASSWORD")
+	if password == "" {
+		password = os.Getenv("OT_USER_DB_PASSWORD")
+	}
 
 	if password == "" {
 		passFile := os.Getenv("DB_PASSWORD_FILE")
