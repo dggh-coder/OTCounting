@@ -2,12 +2,8 @@
 set -euo pipefail
 
 APP_USER="${OT_USER_DB_USER:-${DB_USER:-ot_user}}"
-APP_PASSWORD="${OT_USER_DB_PASSWORD:-${GS_PASSWORD:-}}"
+APP_PASSWORD="${OT_USER_DB_PASSWORD:-${GS_PASSWORD:-StrongPassw0rd!}}"
 
-if [[ -z "${APP_PASSWORD}" ]]; then
-  echo "OT user setup skipped: OT_USER_DB_PASSWORD/GS_PASSWORD is empty"
-  exit 0
-fi
 
 gsql -v ON_ERROR_STOP=1 -d postgres -U omm <<EOSQL
 DO
