@@ -5,6 +5,7 @@ const state = {
   staff: [],
   selectedStaff: "",
   date: "",
+  remarks: "",
   rows: [],
   existing: []
 };
@@ -222,6 +223,7 @@ async function confirmInput() {
   }
 
   const payload = { otstaffid: state.selectedStaff, date: state.date, entries: allEntries };
+  payload.remarks = state.remarks;
   const resp = await fetch(endpoint("/api/ot/input"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -256,6 +258,7 @@ function bindEvents() {
   if (toPeriodBtn) toPeriodBtn.addEventListener("click", async () => {
     state.selectedStaff = document.getElementById("staff-select").value;
     state.date = document.getElementById("work-date").value;
+    state.remarks = document.getElementById("work-remarks").value.trim();
     if (!state.selectedStaff || !state.date) {
       document.getElementById("select-msg").textContent = "Please select both staff and date.";
       return;

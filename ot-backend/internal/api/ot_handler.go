@@ -18,6 +18,7 @@ type OTHandler struct {
 type inputRequest struct {
 	OTStaffID string          `json:"otstaffid"`
 	Date      string          `json:"date"`
+	Remarks   string          `json:"remarks"`
 	Period    string          `json:"period"`
 	Type      string          `json:"type"`
 	StartTime string          `json:"startTime"`
@@ -58,6 +59,7 @@ func (h *OTHandler) Input(w http.ResponseWriter, r *http.Request) {
 	}
 	req.OTStaffID = strings.TrimSpace(req.OTStaffID)
 	req.Date = normalizeDate(req.Date)
+	req.Remarks = strings.TrimSpace(req.Remarks)
 	if req.Period != "" && !validPeriod(req.Period) {
 		http.Error(w, "period must be 00/01/02", http.StatusBadRequest)
 		return
@@ -80,7 +82,7 @@ func (h *OTHandler) Input(w http.ResponseWriter, r *http.Request) {
 
 	saved := make([]db.SavedEntry, 0)
 	if req.Period != "" {
-		list, err := h.Store.SavePeriodEntries(r.Context(), req.OTStaffID, req.Date, req.Period, entries)
+		list, err := h.Store.SavePeriodEntries(r.Context(), req.OTStaffID, req.Date, req.Period, req.Remarks, entries)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -100,7 +102,7 @@ func (h *OTHandler) Input(w http.ResponseWriter, r *http.Request) {
 			if len(grouped[p]) == 0 {
 				continue
 			}
-			list, err := h.Store.SavePeriodEntries(r.Context(), req.OTStaffID, req.Date, p, grouped[p])
+			list, err := h.Store.SavePeriodEntries(r.Context(), req.OTStaffID, req.Date, p, req.Remarks, grouped[p])
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
