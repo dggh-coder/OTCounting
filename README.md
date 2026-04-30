@@ -118,9 +118,10 @@ The openGauss init SQL is also mounted to the DB container at:
 
 It creates:
 
-- `ot_uat.work_session`
-- `ot_uat.time_entry`
-- `ot_uat.session_result`
+- `ot_staffinfo.staffinfo`
+- `ot_driverstd.otperiod`
+- `ot_driverstd.otdetails`
+- `ot_driverstd.periodresult`
 
 If these tables already exist after `podman compose ... up -d opengauss`, **do not** run `001_schema.sql` manually again.
 
@@ -134,8 +135,8 @@ and initializes a backend DB account:
 
 When the DB volume is fresh, `002_create_ot_user.sh` automatically creates/grants this app user during initialization.
 
-It also reassigns ownership of existing `ot_uat` tables to `ot_user` during init so backend writes are not blocked by table-owner mismatches.
-It also sets `ot_user` as owner of schema `ot_uat`.
+It also reassigns ownership of existing `staffinfo` and `otdriverstd` tables to `ot_user` during init so backend writes are not blocked by table-owner mismatches.
+It also sets `ot_user` as owner of schemas `staffinfo` and `otdriverstd`.
 
 Important: DB init scripts run only on a **fresh** data directory. If `/data/otopengauss/db` already has data, changing `.env` later will not re-run user creation.
 
@@ -167,8 +168,8 @@ For an **already initialized DB volume** (init scripts do not re-run), create/gr
 
 ```bash
 podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "CREATE USER ot_user WITH PASSWORD 'YOUR_APP_PASSWORD';"
-podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "GRANT CONNECT,CREATE,TEMP ON DATABASE postgres TO ot_user; GRANT USAGE,CREATE ON SCHEMA ot_uat TO ot_user; ALTER SCHEMA ot_uat OWNER TO ot_user; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ot_uat TO ot_user; ALTER DEFAULT PRIVILEGES IN SCHEMA ot_uat GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ot_user;"
-podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "ALTER TABLE ot_uat.work_session OWNER TO ot_user; ALTER TABLE ot_uat.time_entry OWNER TO ot_user; ALTER TABLE ot_uat.session_result OWNER TO ot_user;"
+podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "GRANT CONNECT,CREATE,TEMP ON DATABASE postgres TO ot_user; GRANT USAGE,CREATE ON SCHEMA ot_staffinfo TO ot_user; GRANT USAGE,CREATE ON SCHEMA ot_driverstd TO ot_user; ALTER SCHEMA ot_staffinfo OWNER TO ot_user; ALTER SCHEMA ot_driverstd OWNER TO ot_user; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ot_staffinfo TO ot_user; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ot_driverstd TO ot_user; ALTER DEFAULT PRIVILEGES IN SCHEMA ot_staffinfo GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ot_user; ALTER DEFAULT PRIVILEGES IN SCHEMA ot_driverstd GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ot_user;"
+podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_GS_PASSWORD' -c "DO $$ DECLARE r RECORD; BEGIN FOR r IN SELECT schemaname, tablename FROM pg_tables WHERE schemaname IN ('ot_staffinfo','ot_driverstd') LOOP EXECUTE format('ALTER TABLE %I.%I OWNER TO %I', r.schemaname, r.tablename, 'ot_user'); END LOOP; END $$;"
 ```
 
 Or run the helper (recommended):
@@ -234,24 +235,25 @@ Expected response:
 2) Submit one sample OT calculation:
 
 ```bash
-curl -s -X POST http://localhost:8080/api/calculate \
+curl -s -X POST http://localhost:8080/api/ot/input \
   -H 'Content-Type: application/json' \
   -d '{
-    "employee_id":"E1001",
-    "work_date":"2026-04-19",
+    "otstaffid":"S1001",
+    "date":"2026-04-19",
+    "period":"00",
     "entries":[
-      {"start":"17:30","end":"20:00","entry_type":"work"},
-      {"start":"20:00","end":"20:30","entry_type":"break"},
-      {"start":"20:30","end":"22:00","entry_type":"work"}
+      {"type":"00","startTime":"17:30","endTime":"20:00","inputBy":"S9001"},
+      {"type":"01","startTime":"20:00","endTime":"20:30","inputBy":"S9001"},
+      {"type":"00","startTime":"20:30","endTime":"22:00","inputBy":"S9001"}
     ]
   }'
 ```
 
-3) Confirm a row was persisted to `work_session`:
+3) Confirm rows were persisted to `ot_driverstd.otdetails`:
 
 ```bash
 podman exec -it ot-opengauss gsql -d postgres -U omm -W 'YOUR_PASSWORD' \
-  -c "SET search_path TO ot_uat, public; SELECT id, employee_id, work_date, created_at FROM work_session ORDER BY created_at DESC LIMIT 5;"
+  -c "SELECT id, otid, type, starttime, endtime, created_at FROM ot_driverstd.otdetails ORDER BY created_at DESC LIMIT 5;"
 ```
 
 4) Open the frontend and run the same flow in UI:
