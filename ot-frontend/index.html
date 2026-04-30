@@ -14,49 +14,16 @@
       <button id="tab-btn-staff" class="tab-btn" data-tab="staff" type="button">Staff Input</button>
     </nav>
 
-    <section id="tab-ot" class="tab-content">
-      <section id="step-select" class="card">
-        <h2>1) Select Staff + Date</h2>
-        <div class="row">
-          <label>Staff
-            <select id="staff-select"></select>
-          </label>
-          <label>Date
-            <input id="work-date" type="date">
-          </label>
-          <label>Remarks
-            <input id="work-remarks" type="text" placeholder="optional">
-          </label>
-          <button id="to-period" type="button">Next</button>
-        </div>
-        <div id="select-msg" class="msg"></div>
-      </section>
 
-      <section id="step-input" class="card hidden">
-        <h2>2) Input Details</h2>
-        <div id="context"></div>
-        <h3>Existing Records (Read-only, can delete)</h3>
-        <table>
-          <thead>
-            <tr><th>Type</th><th>Start (HH:MM)</th><th>End (HH:MM)</th><th></th></tr>
-          </thead>
-          <tbody id="existing-body"></tbody>
-        </table>
-        <h3>New Records</h3>
-        <button id="add-row" type="button">Add Row</button>
-        <table>
-          <thead>
-            <tr><th>Type</th><th>Start (HH:MM)</th><th>End (HH:MM)</th><th></th></tr>
-          </thead>
-          <tbody id="entry-body"></tbody>
-        </table>
-        <div class="actions">
-          <button id="confirm" type="button">確認 Confirm</button>
-          <button id="cancel-input" type="button">Back</button>
-        </div>
-        <div id="input-msg" class="msg"></div>
+    <section id="tab-ot" class="tab-content">
+      <section class="card">
+        <h2>OT Input</h2>
+        <button id="add-group" type="button">+ Add Staff + Date</button>
+        <p class="hint">Click Next to show period rows under the same Staff + Date + Remarks block. Existing records remain visible.</p>
       </section>
+      <div id="ot-groups"></div>
     </section>
+
 
     <section id="tab-staff" class="tab-content hidden">
       <section class="card">
