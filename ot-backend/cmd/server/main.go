@@ -55,6 +55,9 @@ func databaseURLFromEnv() (string, error) {
 	name := envOr("DB_NAME", "postgres")
 	user := envOr("DB_USER", "ot_user")
 	password := os.Getenv("DB_PASSWORD")
+	if password == "" {
+		password = os.Getenv("OT_USER_DB_PASSWORD")
+	}
 
 	if password == "" {
 		passFile := os.Getenv("DB_PASSWORD_FILE")
