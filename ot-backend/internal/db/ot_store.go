@@ -116,14 +116,25 @@ func (s *Store) ListStaff(ctx context.Context) ([]Staff, error) {
 	return out, rows.Err()
 }
 
-func (s *Store) SavePeriodEntries(ctx context.Context, otstaffid, date, period string, entries []EntryInput) ([]SavedEntry, error) {
+func (s *Store) DeleteStaff(ctx context.Context, staffID string) error {
+	tag, err := s.pool.Exec(ctx, `DELETE FROM ot_staffinfo.staffinfo WHERE staffid = $1`, strings.TrimSpace(staffID))
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("staff not found")
+	}
+	return nil
+}
+
+func (s *Store) SavePeriodEntries(ctx context.Context, otstaffid, date, period, remarks string, entries []EntryInput) ([]SavedEntry, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback(ctx)
 
-	periodID, err := upsertOTPeriod(ctx, tx, otstaffid, date, period)
+	periodID, err := upsertOTPeriod(ctx, tx, otstaffid, date, period, remarks)
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +366,7 @@ func (s *Store) rebuildPeriodResultTx(ctx context.Context, tx pgx.Tx, periodID i
 				(id, otstaffid, date_label, process20txt, process15txt, hours20, hours15, mins20, mins15, totalhrs20, totalhrs15)
 				VALUES ($1, $2, $3::date, $4, $5, $6, $7, $8, $9, $10, $11)
 			`, id, otstaffid, date, process20, process15,
-				hours20, hours15, mins20, mins15, total20, total15)
+			hours20, hours15, mins20, mins15, total20, total15)
 		if err != nil {
 			return err
 		}
@@ -379,16 +390,19 @@ func parseDateRange(date, start, end string) (timeSpan, error) {
 	return timeSpan{start: s, end: e}, nil
 }
 
-func upsertOTPeriod(ctx context.Context, tx pgx.Tx, otstaffid, date, period string) (int64, error) {
+func upsertOTPeriod(ctx context.Context, tx pgx.Tx, otstaffid, date, period, remarks string) (int64, error) {
 	var id int64
 	err := tx.QueryRow(ctx, `SELECT id FROM ot_driverstd.otperiod WHERE otstaffid = $1 AND date = $2::date AND period = $3`, otstaffid, date, period).Scan(&id)
 	if err == nil {
+		if _, err := tx.Exec(ctx, `UPDATE ot_driverstd.otperiod SET remarks = $2 WHERE id = $1`, id, remarks); err != nil {
+			return 0, err
+		}
 		return id, nil
 	}
 	if err != pgx.ErrNoRows {
 		return 0, err
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO ot_driverstd.otperiod (date, otstaffid, period, remarks) VALUES ($1::date, $2, $3, '')`, date, otstaffid, period); err != nil {
+	if _, err := tx.Exec(ctx, `INSERT INTO ot_driverstd.otperiod (date, otstaffid, period, remarks) VALUES ($1::date, $2, $3, $4)`, date, otstaffid, period, remarks); err != nil {
 		return 0, err
 	}
 	if err := tx.QueryRow(ctx, `SELECT id FROM ot_driverstd.otperiod WHERE otstaffid = $1 AND date = $2::date AND period = $3`, otstaffid, date, period).Scan(&id); err != nil {
