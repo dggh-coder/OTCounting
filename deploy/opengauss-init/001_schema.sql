@@ -15,20 +15,7 @@ ALTER TABLE ot_staffinfo.staffinfo ALTER COLUMN nameeng DROP NOT NULL;
 ALTER TABLE ot_staffinfo.staffinfo ALTER COLUMN namechi DROP NOT NULL;
 ALTER TABLE ot_staffinfo.staffinfo ALTER COLUMN displayname DROP NOT NULL;
 ALTER TABLE ot_staffinfo.staffinfo ALTER COLUMN domainname DROP NOT NULL;
-DO
-\$\$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM information_schema.columns
-    WHERE table_schema = 'ot_staffinfo'
-      AND table_name = 'staffinfo'
-      AND column_name = 'staffgroup'
-  ) THEN
-    ALTER TABLE ot_staffinfo.staffinfo ADD COLUMN staffgroup VARCHAR(255);
-  END IF;
-END
-\$\$;
+ALTER TABLE ot_staffinfo.staffinfo ADD COLUMN IF NOT EXISTS staffgroup VARCHAR(255);
 ALTER TABLE ot_staffinfo.staffinfo ALTER COLUMN staffgroup DROP NOT NULL;
 
 CREATE TABLE IF NOT EXISTS ot_driverstd.otperiod (
