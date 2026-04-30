@@ -1,7 +1,7 @@
 CREATE SCHEMA IF NOT EXISTS ot_staffinfo;
 CREATE SCHEMA IF NOT EXISTS ot_driverstd;
 
-CREATE TABLE ot_staffinfo.staffinfo IF NOT EXISTS(
+CREATE TABLE IF NOT EXISTS ot_staffinfo.staffinfo(
     id           BIGSERIAL PRIMARY KEY,
     staffid      VARCHAR(64) UNIQUE NOT NULL,
     nameeng      VARCHAR(255),
