@@ -16,7 +16,7 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${APP_USER}') THEN
     EXECUTE format('CREATE USER %I WITH PASSWORD %L', '${APP_USER}', '${APP_PASSWORD}');
   ELSE
-    RAISE NOTICE 'Role % already exists; skip password reset in init script.', '${APP_USER}';
+    EXECUTE format('ALTER USER %I WITH PASSWORD %L', '${APP_USER}', '${APP_PASSWORD}');
   END IF;
 END
 \$\$;
