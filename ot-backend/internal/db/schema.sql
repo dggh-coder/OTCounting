@@ -1,5 +1,5 @@
-CREATE SCHEMA ot_staffinfo;
-CREATE SCHEMA ot_driverstd;
+CREATE SCHEMA IF NOT EXISTS ot_staffinfo;
+CREATE SCHEMA IF NOT EXISTS ot_driverstd;
 
 CREATE TABLE ot_staffinfo.staffinfo (
     id           BIGSERIAL PRIMARY KEY,
