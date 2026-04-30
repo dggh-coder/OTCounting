@@ -37,7 +37,7 @@ function renderStaffList() {
   state.staff.forEach((s) => {
     const div = document.createElement("div");
     div.className = "staff-item";
-    div.textContent = `ID: ${s.staffid} | Eng: ${s.nameeng || ""} | Chi: ${s.namechi || ""} | Display: ${s.displayname || ""} | Domain: ${s.domainname || ""}`;
+    div.textContent = `ID: ${s.staffid} | Eng: ${s.nameeng || ""} | Chi: ${s.namechi || ""} | Display: ${s.displayname || ""} | Domain: ${s.domainname || ""} | Group: ${s.staffgroup || ""}`;
     root.appendChild(div);
   });
 }
@@ -77,6 +77,7 @@ async function saveStaff() {
   const namechi = document.getElementById("staff-namechi").value.trim();
   const displayname = document.getElementById("staff-displayname").value.trim();
   const domainname = document.getElementById("staff-domainname").value.trim();
+  const staffgroup = document.getElementById("staff-staffgroup").value.trim();
   if (!staffid) {
     msg.textContent = "Staff No (ID) is required.";
     return;
@@ -85,14 +86,14 @@ async function saveStaff() {
   const resp = await fetch(endpoint("/api/staff/input"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ staffid, nameeng, namechi, displayname, domainname })
+    body: JSON.stringify({ staffid, nameeng, namechi, displayname, domainname, staffgroup })
   });
   if (!resp.ok) {
     msg.textContent = await resp.text();
     return;
   }
 
-  ["staff-id", "staff-nameeng", "staff-namechi", "staff-displayname", "staff-domainname"].forEach((id) => {
+  ["staff-id", "staff-nameeng", "staff-namechi", "staff-displayname", "staff-domainname", "staff-staffgroup"].forEach((id) => {
     document.getElementById(id).value = "";
   });
   msg.style.color = "#0a7a2f";
