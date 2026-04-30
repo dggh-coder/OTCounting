@@ -37,7 +37,13 @@ function renderStaffList() {
   state.staff.forEach((s) => {
     const div = document.createElement("div");
     div.className = "staff-item";
-    div.textContent = `ID: ${s.staffid} | Eng: ${s.nameeng || ""} | Chi: ${s.namechi || ""} | Display: ${s.displayname || ""} | Domain: ${s.domainname || ""} | Group: ${s.staffgroup || ""}`;
+    div.innerHTML = `
+      <span>ID: ${s.staffid} | Eng: ${s.nameeng || ""} | Chi: ${s.namechi || ""} | Display: ${s.displayname || ""} | Domain: ${s.domainname || ""} | Group: ${s.staffgroup || ""}</span>
+      <button data-action="delete-staff" data-staffid="${s.staffid}" type="button">Delete</button>
+    `;
+    div.querySelector("[data-action='delete-staff']").addEventListener("click", async (e) => {
+      await deleteStaff(e.target.dataset.staffid);
+    });
     root.appendChild(div);
   });
 }
@@ -46,14 +52,16 @@ function fillStaffSelects() {
   const otSelect = document.getElementById("staff-select");
   if (otSelect) otSelect.innerHTML = "<option value=''>-- Select --</option>";
 
-  state.staff.forEach((s) => {
+  state.staff
+    .filter((s) => (s.staffgroup || "").trim().toLowerCase() === "driver")
+    .forEach((s) => {
     if (otSelect) {
       const opt1 = document.createElement("option");
       opt1.value = s.staffid;
       opt1.textContent = `${s.displayname || s.staffid} (${s.staffid})`;
       otSelect.appendChild(opt1);
     }
-  });
+    });
 }
 
 async function loadStaff() {
@@ -98,6 +106,20 @@ async function saveStaff() {
   });
   msg.style.color = "#0a7a2f";
   msg.textContent = "Staff saved.";
+  await loadStaff();
+}
+
+async function deleteStaff(staffid) {
+  const msg = document.getElementById("staff-msg");
+  msg.textContent = "";
+  msg.style.color = "#b00020";
+  const resp = await fetch(endpoint(`/api/staff?staffid=${encodeURIComponent(staffid)}`), { method: "DELETE" });
+  if (!resp.ok) {
+    msg.textContent = await resp.text();
+    return;
+  }
+  msg.style.color = "#0a7a2f";
+  msg.textContent = `Staff ${staffid} deleted.`;
   await loadStaff();
 }
 

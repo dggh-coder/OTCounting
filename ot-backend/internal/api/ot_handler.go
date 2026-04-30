@@ -186,6 +186,19 @@ func (h *OTHandler) Staff(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
+	if r.Method == http.MethodDelete {
+		staffID := strings.TrimSpace(r.URL.Query().Get("staffid"))
+		if staffID == "" {
+			http.Error(w, "staffid is required", http.StatusBadRequest)
+			return
+		}
+		if err := h.Store.DeleteStaff(r.Context(), staffID); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"deleted": staffID})
+		return
+	}
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
