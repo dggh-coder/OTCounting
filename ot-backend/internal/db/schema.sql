@@ -17,7 +17,7 @@ ALTER TABLE ot_staffinfo.staffinfo ALTER COLUMN displayname DROP NOT NULL;
 ALTER TABLE ot_staffinfo.staffinfo ALTER COLUMN domainname DROP NOT NULL;
 ALTER TABLE ot_staffinfo.staffinfo ALTER COLUMN staffgroup DROP NOT NULL;
 
-CREATE TABLE ot_driverstd.otperiod (
+CREATE TABLE IF NOT EXISTS ot_driverstd.otperiod (
     id         BIGSERIAL PRIMARY KEY,
     date       DATE NOT NULL,
     otstaffid  VARCHAR(64) NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE ot_driverstd.otperiod (
     CONSTRAINT uq_otperiod_staff_date_period UNIQUE (otstaffid, date, period)
 );
 
-CREATE TABLE ot_driverstd.otdetails (
+CREATE TABLE IF NOT EXISTS ot_driverstd.otdetails (
     id         BIGSERIAL PRIMARY KEY,
     otid       BIGINT NOT NULL REFERENCES ot_driverstd.otperiod(id) ON DELETE CASCADE,
     type       CHAR(2) NOT NULL CHECK (type IN ('00', '01')),
@@ -48,7 +48,7 @@ ALTER TABLE ot_driverstd.otdetails
 
 CREATE INDEX idx_otdetails_otid ON ot_driverstd.otdetails (otid);
 
-CREATE TABLE ot_driverstd.periodresult (
+CREATE TABLE IF NOT EXISTS ot_driverstd.periodresult (
     id          VARCHAR(10) PRIMARY KEY,
     otstaffid   VARCHAR(64) NOT NULL,
     date_label  DATE NOT NULL,
