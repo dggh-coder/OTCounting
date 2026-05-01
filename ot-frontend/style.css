@@ -6,7 +6,7 @@ body{font-family:Inter,Segoe UI,Arial,sans-serif;margin:0;background:radial-grad
 .top-links{display:flex;gap:.45rem}
 .top-link,.tab-btn{background:transparent;border:1px solid transparent;color:#dbe4ff;padding:.5rem .8rem;border-radius:8px;cursor:pointer}
 .top-link.active,.tab-btn.active{background:linear-gradient(120deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 8px 18px rgba(47,123,255,.35)}
-main{max-width:1080px;margin:0 auto;padding:1.1rem}
+main{width:min(96vw,1700px);max-width:none;margin:0 auto;padding:1.1rem}
 .card{background:var(--card);padding:1.15rem;border-radius:14px;margin-bottom:1rem;border:1px solid var(--line);color:var(--ink);box-shadow:0 8px 24px rgba(10,16,42,.08)}
 .hidden{display:none}
 .tabs{display:flex;gap:.5rem;margin-bottom:1rem}
@@ -27,3 +27,7 @@ th,td{border:1px solid #ddd;padding:.5rem}
 .clock{font-size:1.9rem;font-weight:700;letter-spacing:.06rem}
 .pulse-wrap{position:relative;height:70px}.pulse-wrap span{position:absolute;left:8px;top:15px;width:34px;height:34px;border-radius:50%;background:rgba(99,197,255,.7);animation:pulse 2s infinite}.pulse-wrap span:nth-child(2){left:58px;animation-delay:.35s}.pulse-wrap span:nth-child(3){left:108px;animation-delay:.7s}
 @keyframes pulse{from{transform:scale(.8);opacity:.95}to{transform:scale(1.8);opacity:.12}}
+
+@media (min-width: 1400px){
+  .row{grid-template-columns:repeat(6,minmax(180px,1fr));}
+}
