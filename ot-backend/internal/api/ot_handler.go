@@ -36,6 +36,12 @@ type staffInputRequest struct {
 	StaffGroup  string `json:"staffgroup"`
 }
 
+type remarksRequest struct {
+	OTStaffID string `json:"otstaffid"`
+	Date      string `json:"date"`
+	Remarks   string `json:"remarks"`
+}
+
 func (h *OTHandler) Input(w http.ResponseWriter, r *http.Request) {
 	setJSON(w)
 	if r.Method == http.MethodOptions {
@@ -263,6 +269,36 @@ func (h *OTHandler) StaffInput(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = json.NewEncoder(w).Encode(map[string]any{"staff": saved})
+}
+
+func (h *OTHandler) Remarks(w http.ResponseWriter, r *http.Request) {
+	setJSON(w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	if r.Method != http.MethodPost && r.Method != http.MethodPatch {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	defer r.Body.Close()
+	var req remarksRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid json", http.StatusBadRequest)
+		return
+	}
+	req.OTStaffID = strings.TrimSpace(req.OTStaffID)
+	req.Date = normalizeDate(req.Date)
+	req.Remarks = strings.TrimSpace(req.Remarks)
+	if req.OTStaffID == "" || req.Date == "" {
+		http.Error(w, "otstaffid/date required", http.StatusBadRequest)
+		return
+	}
+	if err := h.Store.UpsertPeriodRemarks(r.Context(), req.OTStaffID, req.Date, req.Remarks); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
 }
 
 func setJSON(w http.ResponseWriter) {
