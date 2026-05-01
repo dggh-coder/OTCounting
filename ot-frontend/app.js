@@ -11,6 +11,22 @@ function endpoint(path) { return API_BASE ? `${API_BASE}${path}` : path; }
 function rowTemplate() { return { type: "00", startTime: "", endTime: "" }; }
 function createGroup() { return { id: state.nextGroupId++, staff: "", date: "", remarks: "", expanded: false, rows: [], existing: [], msg: "" }; }
 
+
+
+function switchTopView(viewName){
+  ["home","driver"].forEach((n)=>{
+    document.getElementById(`view-${n}`)?.classList.toggle("hidden", n!==viewName);
+  });
+  document.querySelectorAll('.top-link').forEach((b)=>b.classList.toggle('active', b.dataset.view===viewName));
+}
+
+function startClock(){
+  const el=document.getElementById('live-clock');
+  if(!el) return;
+  const tick=()=>{ el.textContent = new Date().toLocaleTimeString(); };
+  tick();
+  setInterval(tick,1000);
+}
 function switchTab(tabName) {
   ["ot", "staff"].forEach((n) => {
     const section = document.getElementById(`tab-${n}`);
@@ -31,7 +47,15 @@ function renderStaffList() { /* unchanged */
   if (state.staff.length === 0) { root.textContent = "No staff found."; return; }
   state.staff.forEach((s) => {
     const div = document.createElement("div"); div.className = "staff-item";
-    div.innerHTML = `<span>ID: ${s.staffid} | Eng: ${s.nameeng || ""} | Chi: ${s.namechi || ""} | Display: ${s.displayname || ""} | Domain: ${s.domainname || ""} | Group: ${s.staffgroup || ""}</span><button data-action="delete-staff" data-staffid="${s.staffid}" type="button">Delete</button>`;
+    div.innerHTML = `<div class="staff-item__meta">
+      <span class="pill"><strong>ID</strong> ${s.staffid}</span>
+      <span class="pill"><strong>Eng</strong> ${s.nameeng || "-"}</span>
+      <span class="pill"><strong>Chi</strong> ${s.namechi || "-"}</span>
+      <span class="pill"><strong>Display</strong> ${s.displayname || "-"}</span>
+      <span class="pill"><strong>Domain</strong> ${s.domainname || "-"}</span>
+      <span class="pill"><strong>Group</strong> ${s.staffgroup || "-"}</span>
+    </div>
+    <button class="btn-danger" data-action="delete-staff" data-staffid="${s.staffid}" type="button">Delete</button>`;
     div.querySelector("[data-action='delete-staff']").addEventListener("click", async (e) => deleteStaff(e.target.dataset.staffid));
     root.appendChild(div);
   });
@@ -108,6 +132,11 @@ async function saveStaff(){/* unchanged simplified */
 }
 async function deleteStaff(staffid){const msg=document.getElementById('staff-msg'); msg.textContent=''; const resp=await fetch(endpoint(`/api/staff?staffid=${encodeURIComponent(staffid)}`),{method:'DELETE'}); if(!resp.ok){msg.textContent=await resp.text();return;} msg.style.color='#0a7a2f'; msg.textContent=`Staff ${staffid} deleted.`; await loadStaff();}
 
-function bindEvents(){ document.querySelectorAll('.tab-btn').forEach((btn)=>btn.addEventListener('click', function(){switchTab(this.getAttribute('data-tab'));})); document.getElementById('save-staff')?.addEventListener('click',saveStaff); document.getElementById('add-group')?.addEventListener('click',()=>{state.groups.push(createGroup()); renderGroups();}); }
-function init(){ state.groups=[createGroup()]; bindEvents(); loadStaff(); switchTab('ot'); }
+function bindEvents(){
+  document.querySelectorAll('.tab-btn').forEach((btn)=>btn.addEventListener('click', function(){switchTab(this.getAttribute('data-tab'));}));
+  document.querySelectorAll('.top-link').forEach((btn)=>btn.addEventListener('click', function(){switchTopView(this.getAttribute('data-view'));}));
+  document.getElementById('save-staff')?.addEventListener('click',saveStaff);
+  document.getElementById('add-group')?.addEventListener('click',()=>{state.groups.push(createGroup()); renderGroups();});
+}
+function init(){ state.groups=[createGroup()]; bindEvents(); loadStaff(); switchTab('ot'); switchTopView('home'); startClock(); }
 document.addEventListener('DOMContentLoaded', init);
