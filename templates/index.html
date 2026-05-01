@@ -3,32 +3,90 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OT Calculator</title>
+  <title>OT Frontend</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <main>
-    <h1>OT Calculator (UAT)</h1>
+  <header class="topbar">
+    <div class="topbar__logo" aria-label="Company logo placeholder">
+      <span>LOGO</span>
+    </div>
+    <nav class="topbar__nav" aria-label="Primary">
+      <button class="topbar__link is-active" data-view="home" type="button">Home</button>
+      <button class="topbar__link" data-view="ot-driver" type="button">OT (Driver)</button>
+    </nav>
+  </header>
 
-    <section>
-      <h2>Entries (OT + Break)</h2>
-      <button id="add-entry" type="button">Add Entry</button>
-      <table>
-        <thead>
-          <tr><th>Date</th><th>Session</th><th>Type</th><th>Employee</th><th>Start (24h)</th><th>End (24h)</th><th>Action</th></tr>
-        </thead>
-        <tbody id="entry-body"></tbody>
-      </table>
+  <main class="app-shell">
+    <section id="view-home" class="view is-active" aria-live="polite">
+      <div class="hero">
+        <h1>Operations Overview</h1>
+        <p>Welcome to your OT portal. This home page is designed as a clean visual dashboard area and can be changed freely later.</p>
+        <div class="hero__chips">
+          <span class="chip">Realtime feel</span>
+          <span class="chip">CSS animations</span>
+          <span class="chip">No external links</span>
+        </div>
+      </div>
+
+      <div class="home-grid">
+        <article class="glass-card">
+          <h2>Live Clock</h2>
+          <p id="live-clock" class="clock">--:--:--</p>
+        </article>
+        <article class="glass-card">
+          <h2>Visual Activity</h2>
+          <div class="pulse-wrap" aria-hidden="true">
+            <span class="pulse pulse--a"></span>
+            <span class="pulse pulse--b"></span>
+            <span class="pulse pulse--c"></span>
+          </div>
+        </article>
+        <article class="glass-card home-note">
+          <h2>Notes</h2>
+          <p>The top bar supports extension. You can continue adding links to the right of <strong>OT (Driver)</strong> and map each link to a new page view below.</p>
+        </article>
+      </div>
     </section>
 
-    <section>
-      <h2>Daily Summary</h2>
-      <div id="daily-results"></div>
-    </section>
+    <section id="view-ot-driver" class="view" aria-live="polite">
+      <h1>Driver OT Management</h1>
 
-    <section>
-      <h2>Monthly Summary</h2>
-      <div id="monthly-results"></div>
+      <div class="subtabs" role="tablist" aria-label="Driver OT tabs">
+        <button class="subtabs__btn is-active" data-subtab="ot-input" type="button" role="tab" aria-selected="true">OT Input</button>
+        <button class="subtabs__btn" data-subtab="staff-input" type="button" role="tab" aria-selected="false">Staff Input</button>
+      </div>
+
+      <div class="subtab-panel is-active" data-panel="ot-input" role="tabpanel">
+        <section class="panel">
+          <h2>Entries (OT + Break)</h2>
+          <button id="add-entry" type="button" class="btn-primary">Add Entry</button>
+          <table>
+            <thead>
+              <tr><th>Date</th><th>Session</th><th>Type</th><th>Employee</th><th>Start (24h)</th><th>End (24h)</th><th>Action</th></tr>
+            </thead>
+            <tbody id="entry-body"></tbody>
+          </table>
+        </section>
+
+        <section class="panel">
+          <h2>Daily Summary</h2>
+          <div id="daily-results"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Monthly Summary</h2>
+          <div id="monthly-results"></div>
+        </section>
+      </div>
+
+      <div class="subtab-panel" data-panel="staff-input" role="tabpanel">
+        <section class="panel">
+          <h2>Staff Input (Same Data Model)</h2>
+          <p>This tab shares the exact same OT data and calculation flow as OT Input.</p>
+          <div id="staff-results"></div>
+        </section>
+      </div>
     </section>
   </main>
 
