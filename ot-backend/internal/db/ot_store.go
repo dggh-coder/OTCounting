@@ -168,9 +168,9 @@ func (s *Store) GetEntries(ctx context.Context, otstaffid, date, period string) 
 }
 
 func (s *Store) GetPeriodRemarks(ctx context.Context, otstaffid, date string) (string, error) {
-	var remarks string
+	var remarks sql.NullString
 	err := s.pool.QueryRow(ctx, `
-		SELECT COALESCE(remarks, ''::varchar(600))
+		SELECT remarks
 		FROM ot_driverstd.otperiod
 		WHERE otstaffid = $1 AND date = $2::date
 	`, otstaffid, date).Scan(&remarks)
@@ -180,7 +180,10 @@ func (s *Store) GetPeriodRemarks(ctx context.Context, otstaffid, date string) (s
 	if err != nil {
 		return "", err
 	}
-	return remarks, nil
+	if remarks.Valid {
+		return remarks.String, nil
+	}
+	return "", nil
 }
 
 func getEntriesByFilters(ctx context.Context, q interface {
