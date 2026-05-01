@@ -95,10 +95,11 @@ function renderGroups() {
   root.innerHTML = "";
   state.groups.forEach((g) => {
     const sec = document.createElement("section"); sec.className = `card ot-group-card${g.expanded ? " is-expanded" : ""}`;
+    const statusIsDraft = g.rows.length > 0;
     sec.innerHTML = `<button class="group-remove" data-action="remove" type="button" aria-label="Remove OT Input #${g.id}">×</button>
     <div class="ot-group-header">
       <h2>OT Input</h2>
-      ${g.locked ? `<span class="status-pill">Locked</span>` : `<span class="status-pill status-pill--draft">Draft</span>`}
+      ${statusIsDraft ? `<span class="status-pill status-pill--draft">Draft</span>` : `<span class="status-pill">Saved</span>`}
     </div>
     <div class="row ot-group-form">
       <label>Staff<select data-k="staff" ${g.locked ? "disabled" : ""}>${fillStaffOptions(g.staff)}</select></label>
