@@ -47,7 +47,15 @@ function renderStaffList() { /* unchanged */
   if (state.staff.length === 0) { root.textContent = "No staff found."; return; }
   state.staff.forEach((s) => {
     const div = document.createElement("div"); div.className = "staff-item";
-    div.innerHTML = `<span>ID: ${s.staffid} | Eng: ${s.nameeng || ""} | Chi: ${s.namechi || ""} | Display: ${s.displayname || ""} | Domain: ${s.domainname || ""} | Group: ${s.staffgroup || ""}</span><button data-action="delete-staff" data-staffid="${s.staffid}" type="button">Delete</button>`;
+    div.innerHTML = `<div class="staff-item__meta">
+      <span class="pill"><strong>ID</strong> ${s.staffid}</span>
+      <span class="pill"><strong>Eng</strong> ${s.nameeng || "-"}</span>
+      <span class="pill"><strong>Chi</strong> ${s.namechi || "-"}</span>
+      <span class="pill"><strong>Display</strong> ${s.displayname || "-"}</span>
+      <span class="pill"><strong>Domain</strong> ${s.domainname || "-"}</span>
+      <span class="pill"><strong>Group</strong> ${s.staffgroup || "-"}</span>
+    </div>
+    <button class="btn-danger" data-action="delete-staff" data-staffid="${s.staffid}" type="button">Delete</button>`;
     div.querySelector("[data-action='delete-staff']").addEventListener("click", async (e) => deleteStaff(e.target.dataset.staffid));
     root.appendChild(div);
   });
