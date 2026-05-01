@@ -104,7 +104,11 @@ function renderGroups() {
       <label>Staff<select data-k="staff" ${g.locked ? "disabled" : ""}>${fillStaffOptions(g.staff)}</select></label>
       <label>Date<input data-k="date" class="js-date-picker" type="text" value="${g.date}" placeholder="YYYY-MM-DD" ${g.locked ? "disabled" : ""}></label>
       <button class="btn-primary" data-action="next" type="button" ${g.locked ? "disabled" : ""}>Next</button>
+<<<<<<< codex/find-out-how-otperiod-remarks-trigger-save-h6gnbv
+      ${g.expanded ? `<div class="remarks-wrap"><label class="remarks-field">Remarks<input data-k="remarks" class="${g.remarksReadonly ? "remarks-locked" : ""}" type="text" value="${g.remarks}" ${g.remarksReadonly ? "disabled" : ""}></label>${g.hasPeriodRecord ? `<button class="btn-ghost remarks-toggle-btn" data-action="toggle-remarks" type="button" title="${g.remarksReadonly ? "修改 Remarks" : "儲存 Remarks"}">${g.remarksReadonly ? "✎" : "✓"}</button>` : ""}</div>` : ""}
+=======
       ${g.expanded ? `<label class="remarks-field">Remarks<input data-k="remarks" type="text" value="${g.remarks}" ${g.remarksReadonly ? "disabled" : ""}></label>${g.hasPeriodRecord ? `<button class="btn-ghost" data-action="toggle-remarks" type="button">${g.remarksReadonly ? "修改" : "✓"}</button>` : ""}` : ""}
+>>>>>>> main
     </div>
     <div class="msg select-msg">${g.msg || ""}</div>
     <div class="period-area ${g.expanded ? "" : "hidden"}">

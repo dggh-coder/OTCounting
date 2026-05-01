@@ -107,7 +107,31 @@ th,td{border:1px solid #ddd;padding:.5rem}
 .remarks-field input{min-width:420px}
 .remarks-field{min-width:420px}
 .remarks-field input{min-width:420px}
-.ot-group-form [data-action="toggle-remarks"]{height:44px;align-self:end;min-width:72px;font-weight:700}
+.remarks-wrap{
+  display:flex;
+  align-items:flex-end;
+  gap:.45rem;
+}
+.remarks-toggle-btn{
+  height:44px;
+  width:44px;
+  min-width:44px !important;
+  padding:0;
+  display:inline-grid;
+  place-items:center;
+  font-size:1.05rem;
+  font-weight:800;
+}
+.remarks-locked{
+  background:#eef3ff !important;
+  border:2px solid #89a5da !important;
+  color:#334f86 !important;
+  box-shadow:inset 0 0 0 1px rgba(58,90,153,.2);
+}
+.remarks-locked:disabled{
+  opacity:1;
+  cursor:not-allowed;
+}
 
 .staff-table{width:100%;border-collapse:collapse;table-layout:fixed;background:#fff}
 .staff-table th,.staff-table td{border:1px solid #cfd7e6;padding:.55rem .6rem;text-align:left;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
