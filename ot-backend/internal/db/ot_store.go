@@ -66,6 +66,7 @@ type SavedEntry struct {
 	OTStaffID string  `json:"otstaffid"`
 	Date      string  `json:"date"`
 	Period    string  `json:"period"`
+	Remarks   string  `json:"remarks"`
 	Type      string  `json:"type"`
 	StartTime string  `json:"startTime"`
 	EndTime   string  `json:"endTime"`
@@ -169,7 +170,7 @@ func getEntriesByFilters(ctx context.Context, q interface {
 	Query(context.Context, string, ...any) (pgx.Rows, error)
 }, otstaffid, date, period string) ([]SavedEntry, error) {
 	rows, err := q.Query(ctx, `
-			SELECT d.id, d.otid, p.otstaffid, to_char(p.date, 'YYYY-MM-DD'), d.period, d.type,
+			SELECT d.id, d.otid, p.otstaffid, to_char(p.date, 'YYYY-MM-DD'), d.period, COALESCE(p.remarks, ''), d.type,
 			       d.starttime,
 			       d.endtime,
 			       d.inputby
@@ -188,7 +189,7 @@ func getEntriesByFilters(ctx context.Context, q interface {
 	out := []SavedEntry{}
 	for rows.Next() {
 		var r SavedEntry
-		if err := rows.Scan(&r.ID, &r.OTID, &r.OTStaffID, &r.Date, &r.Period, &r.Type, &r.StartTime, &r.EndTime, &r.InputBy); err != nil {
+		if err := rows.Scan(&r.ID, &r.OTID, &r.OTStaffID, &r.Date, &r.Period, &r.Remarks, &r.Type, &r.StartTime, &r.EndTime, &r.InputBy); err != nil {
 			return nil, err
 		}
 		out = append(out, r)
