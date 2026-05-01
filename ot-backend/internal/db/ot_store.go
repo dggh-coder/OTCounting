@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -65,6 +66,7 @@ type SavedEntry struct {
 	OTStaffID string  `json:"otstaffid"`
 	Date      string  `json:"date"`
 	Period    string  `json:"period"`
+	Remarks   string  `json:"remarks"`
 	Type      string  `json:"type"`
 	StartTime string  `json:"startTime"`
 	EndTime   string  `json:"endTime"`
@@ -134,15 +136,15 @@ func (s *Store) SavePeriodEntries(ctx context.Context, otstaffid, date, period, 
 	}
 	defer tx.Rollback(ctx)
 
-	periodID, err := upsertOTPeriod(ctx, tx, otstaffid, date, period, remarks)
+	periodID, err := upsertOTPeriod(ctx, tx, otstaffid, date, remarks)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := tx.Exec(ctx, `DELETE FROM ot_driverstd.otdetails WHERE otid = $1`, periodID); err != nil {
+	if _, err := tx.Exec(ctx, `DELETE FROM ot_driverstd.otdetails WHERE otid = $1 AND period = $2`, periodID, period); err != nil {
 		return nil, err
 	}
 	for _, e := range entries {
-		if _, err := tx.Exec(ctx, `INSERT INTO ot_driverstd.otdetails (otid, type, starttime, endtime, inputby) VALUES ($1, $2, $3, $4, $5)`, periodID, e.Type, e.StartTime, e.EndTime, nullableTrim(e.InputBy)); err != nil {
+		if _, err := tx.Exec(ctx, `INSERT INTO ot_driverstd.otdetails (otid, period, type, starttime, endtime, inputby) VALUES ($1, $2, $3, $4, $5, $6)`, periodID, period, e.Type, e.StartTime, e.EndTime, nullableTrim(e.InputBy)); err != nil {
 			return nil, err
 		}
 	}
@@ -164,11 +166,27 @@ func (s *Store) GetEntries(ctx context.Context, otstaffid, date, period string) 
 	return getEntriesByFilters(ctx, s.pool, otstaffid, date, period)
 }
 
+func (s *Store) GetPeriodRemarks(ctx context.Context, otstaffid, date string) (string, error) {
+	var remarks string
+	err := s.pool.QueryRow(ctx, `
+		SELECT COALESCE(remarks, ''::varchar(600))
+		FROM ot_driverstd.otperiod
+		WHERE otstaffid = $1 AND date = $2::date
+	`, otstaffid, date).Scan(&remarks)
+	if err == pgx.ErrNoRows {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return remarks, nil
+}
+
 func getEntriesByFilters(ctx context.Context, q interface {
 	Query(context.Context, string, ...any) (pgx.Rows, error)
 }, otstaffid, date, period string) ([]SavedEntry, error) {
 	rows, err := q.Query(ctx, `
-			SELECT d.id, d.otid, p.otstaffid, to_char(p.date, 'YYYY-MM-DD'), p.period, d.type,
+			SELECT d.id, d.otid, p.otstaffid, to_char(p.date, 'YYYY-MM-DD'), d.period, COALESCE(p.remarks, ''::varchar(600)), d.type,
 			       d.starttime,
 			       d.endtime,
 			       d.inputby
@@ -176,8 +194,8 @@ func getEntriesByFilters(ctx context.Context, q interface {
 		JOIN ot_driverstd.otperiod p ON p.id = d.otid
 		WHERE ($1 = '' OR p.otstaffid = $1)
 		  AND ($2 = '' OR to_char(p.date, 'YYYY-MM-DD') = $2)
-		  AND (NULLIF(BTRIM($3), '') IS NULL OR p.period = $3)
-		ORDER BY p.date, p.period, d.id
+		  AND (NULLIF(BTRIM($3), '') IS NULL OR d.period = $3)
+		ORDER BY p.date, d.period, d.id
 	`, otstaffid, date, period)
 	if err != nil {
 		return nil, err
@@ -187,7 +205,7 @@ func getEntriesByFilters(ctx context.Context, q interface {
 	out := []SavedEntry{}
 	for rows.Next() {
 		var r SavedEntry
-		if err := rows.Scan(&r.ID, &r.OTID, &r.OTStaffID, &r.Date, &r.Period, &r.Type, &r.StartTime, &r.EndTime, &r.InputBy); err != nil {
+		if err := rows.Scan(&r.ID, &r.OTID, &r.OTStaffID, &r.Date, &r.Period, &r.Remarks, &r.Type, &r.StartTime, &r.EndTime, &r.InputBy); err != nil {
 			return nil, err
 		}
 		out = append(out, r)
@@ -258,7 +276,7 @@ func (s *Store) DeleteEntryAndRebuild(ctx context.Context, detailID int64) error
 	var otid int64
 	var otstaffid, date, period string
 	err = tx.QueryRow(ctx, `
-		SELECT p.id, p.otstaffid, to_char(p.date, 'YYYY-MM-DD'), p.period
+		SELECT p.id, p.otstaffid, to_char(p.date, 'YYYY-MM-DD'), d.period
 		FROM ot_driverstd.otdetails d
 		JOIN ot_driverstd.otperiod p ON p.id = d.otid
 		WHERE d.id = $1
@@ -277,7 +295,7 @@ func (s *Store) DeleteEntryAndRebuild(ctx context.Context, detailID int64) error
 }
 
 func (s *Store) rebuildPeriodResultTx(ctx context.Context, tx pgx.Tx, periodID int64, otstaffid, date, period string) error {
-	rows, err := tx.Query(ctx, `SELECT id, type, starttime::text, endtime::text FROM ot_driverstd.otdetails WHERE otid = $1 ORDER BY id`, periodID)
+	rows, err := tx.Query(ctx, `SELECT id, type, starttime::text, endtime::text FROM ot_driverstd.otdetails WHERE otid = $1 AND period = $2 ORDER BY id`, periodID, period)
 	if err != nil {
 		return err
 	}
@@ -312,6 +330,8 @@ func (s *Store) rebuildPeriodResultTx(ctx context.Context, tx pgx.Tx, periodID i
 	if err := rows.Err(); err != nil {
 		return err
 	}
+	otRanges = mergeTimeSpans(otRanges)
+	breakRanges = mergeTimeSpans(breakRanges)
 
 	rate15Parts := []string{}
 	rate20Parts := []string{}
@@ -390,9 +410,9 @@ func parseDateRange(date, start, end string) (timeSpan, error) {
 	return timeSpan{start: s, end: e}, nil
 }
 
-func upsertOTPeriod(ctx context.Context, tx pgx.Tx, otstaffid, date, period, remarks string) (int64, error) {
+func upsertOTPeriod(ctx context.Context, tx pgx.Tx, otstaffid, date, remarks string) (int64, error) {
 	var id int64
-	err := tx.QueryRow(ctx, `SELECT id FROM ot_driverstd.otperiod WHERE otstaffid = $1 AND date = $2::date AND period = $3`, otstaffid, date, period).Scan(&id)
+	err := tx.QueryRow(ctx, `SELECT id FROM ot_driverstd.otperiod WHERE otstaffid = $1 AND date = $2::date`, otstaffid, date).Scan(&id)
 	if err == nil {
 		if _, err := tx.Exec(ctx, `UPDATE ot_driverstd.otperiod SET remarks = $2 WHERE id = $1`, id, remarks); err != nil {
 			return 0, err
@@ -402,10 +422,10 @@ func upsertOTPeriod(ctx context.Context, tx pgx.Tx, otstaffid, date, period, rem
 	if err != pgx.ErrNoRows {
 		return 0, err
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO ot_driverstd.otperiod (date, otstaffid, period, remarks) VALUES ($1::date, $2, $3, $4)`, date, otstaffid, period, remarks); err != nil {
+	if _, err := tx.Exec(ctx, `INSERT INTO ot_driverstd.otperiod (date, otstaffid, remarks) VALUES ($1::date, $2, $3)`, date, otstaffid, remarks); err != nil {
 		return 0, err
 	}
-	if err := tx.QueryRow(ctx, `SELECT id FROM ot_driverstd.otperiod WHERE otstaffid = $1 AND date = $2::date AND period = $3`, otstaffid, date, period).Scan(&id); err != nil {
+	if err := tx.QueryRow(ctx, `SELECT id FROM ot_driverstd.otperiod WHERE otstaffid = $1 AND date = $2::date`, otstaffid, date).Scan(&id); err != nil {
 		return 0, err
 	}
 	return id, nil
@@ -448,6 +468,32 @@ func subtractTmRange(segments []timeSpan, sub timeSpan) []timeSpan {
 		}
 	}
 	return out
+}
+
+func mergeTimeSpans(in []timeSpan) []timeSpan {
+	if len(in) <= 1 {
+		return in
+	}
+	ranges := make([]timeSpan, len(in))
+	copy(ranges, in)
+	sort.Slice(ranges, func(i, j int) bool {
+		if ranges[i].start.Equal(ranges[j].start) {
+			return ranges[i].end.Before(ranges[j].end)
+		}
+		return ranges[i].start.Before(ranges[j].start)
+	})
+	merged := []timeSpan{ranges[0]}
+	for _, cur := range ranges[1:] {
+		last := &merged[len(merged)-1]
+		if !cur.start.After(last.end) {
+			if cur.end.After(last.end) {
+				last.end = cur.end
+			}
+			continue
+		}
+		merged = append(merged, cur)
+	}
+	return merged
 }
 
 func splitSegmentsByRate(seg timeSpan) ([]string, []string) {
