@@ -39,6 +39,7 @@ th,td{border:1px solid #ddd;padding:.5rem}
 .ot-group-form{background:linear-gradient(180deg,#f6f9ff,#eef4ff);border:1px solid #dce7fb;border-radius:12px;padding:.9rem}
 .group-remove{position:absolute;right:-28px;top:16px;width:56px;height:56px;padding:0;border:none;border-radius:6px;background:#ff4d4f;color:#fff;font-size:36px;line-height:56px;font-weight:700;box-shadow:0 6px 12px rgba(217,63,63,.4);z-index:2}
 .ot-group-card.is-expanded .group-remove{top:132px}
+.group-remove{position:absolute;right:-24px;top:-8px;width:56px;height:56px;padding:0;border:none;border-radius:6px;background:#ff4d4f;color:#fff;font-size:36px;line-height:56px;font-weight:700;box-shadow:0 6px 12px rgba(217,63,63,.4)}
 .group-remove:hover{background:#e13a3c}
 .group-remove:disabled{opacity:.55;cursor:not-allowed}
 .period-area{margin-top:1rem;padding:1rem;border-radius:12px;background:#fbfcff;border:1px solid #dfe7f6}
@@ -50,6 +51,8 @@ th,td{border:1px solid #ddd;padding:.5rem}
 .ot-group-card h3{font-size:1.05rem;margin:1rem 0 .45rem}
 .ot-group-card table th{background:#f1f5ff}
 .ot-group-card .actions{justify-content:flex-end;margin-top:.75rem}
+.remarks-field{min-width:420px}
+.remarks-field input{min-width:420px}
 .remarks-field{min-width:420px}
 .remarks-field input{min-width:420px}
 
