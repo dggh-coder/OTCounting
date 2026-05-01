@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"sort"
 	"strconv"
@@ -205,8 +206,21 @@ func getEntriesByFilters(ctx context.Context, q interface {
 	out := []SavedEntry{}
 	for rows.Next() {
 		var r SavedEntry
-		if err := rows.Scan(&r.ID, &r.OTID, &r.OTStaffID, &r.Date, &r.Period, &r.Remarks, &r.Type, &r.StartTime, &r.EndTime, &r.InputBy); err != nil {
+		var remarks sql.NullString
+		var inputBy sql.NullString
+		if err := rows.Scan(&r.ID, &r.OTID, &r.OTStaffID, &r.Date, &r.Period, &remarks, &r.Type, &r.StartTime, &r.EndTime, &inputBy); err != nil {
 			return nil, err
+		}
+		if remarks.Valid {
+			r.Remarks = remarks.String
+		} else {
+			r.Remarks = ""
+		}
+		if inputBy.Valid {
+			v := inputBy.String
+			r.InputBy = &v
+		} else {
+			r.InputBy = nil
 		}
 		out = append(out, r)
 	}
