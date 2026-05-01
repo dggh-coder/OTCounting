@@ -107,6 +107,7 @@ th,td{border:1px solid #ddd;padding:.5rem}
 .remarks-field input{min-width:420px}
 .remarks-field{min-width:420px}
 .remarks-field input{min-width:420px}
+.ot-group-form [data-action="toggle-remarks"]{height:44px;align-self:end;min-width:72px;font-weight:700}
 
 .staff-table{width:100%;border-collapse:collapse;table-layout:fixed;background:#fff}
 .staff-table th,.staff-table td{border:1px solid #cfd7e6;padding:.55rem .6rem;text-align:left;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

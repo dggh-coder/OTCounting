@@ -9,7 +9,7 @@ const state = {
 
 function endpoint(path) { return API_BASE ? `${API_BASE}${path}` : path; }
 function rowTemplate() { return { type: "00", startTime: "", endTime: "" }; }
-function createGroup() { return { id: state.nextGroupId++, staff: "", date: "", remarks: "", expanded: false, locked: false, rows: [], existing: [], msg: "" }; }
+function createGroup() { return { id: state.nextGroupId++, staff: "", date: "", remarks: "", remarksReadonly: false, hasPeriodRecord: false, expanded: false, locked: false, rows: [], existing: [], msg: "" }; }
 
 
 
@@ -104,7 +104,7 @@ function renderGroups() {
       <label>Staff<select data-k="staff" ${g.locked ? "disabled" : ""}>${fillStaffOptions(g.staff)}</select></label>
       <label>Date<input data-k="date" class="js-date-picker" type="text" value="${g.date}" placeholder="YYYY-MM-DD" ${g.locked ? "disabled" : ""}></label>
       <button class="btn-primary" data-action="next" type="button" ${g.locked ? "disabled" : ""}>Next</button>
-      ${g.expanded ? `<label class="remarks-field">Remarks<input data-k="remarks" type="text" value="${g.remarks}"></label>` : ""}
+      ${g.expanded ? `<label class="remarks-field">Remarks<input data-k="remarks" type="text" value="${g.remarks}" ${g.remarksReadonly ? "disabled" : ""}></label>${g.hasPeriodRecord ? `<button class="btn-ghost" data-action="toggle-remarks" type="button">${g.remarksReadonly ? "修改" : "✓"}</button>` : ""}` : ""}
     </div>
     <div class="msg select-msg">${g.msg || ""}</div>
     <div class="period-area ${g.expanded ? "" : "hidden"}">
@@ -160,6 +160,14 @@ function renderGroups() {
     });
     sec.querySelector("[data-action='add-row']").addEventListener("click", () => { g.rows.push(rowTemplate()); renderGroups(); });
     sec.querySelector("[data-action='confirm']").addEventListener("click", async () => { await confirmInput(g, sec.querySelector('.input-msg')); });
+    sec.querySelector("[data-action='toggle-remarks']")?.addEventListener("click", async () => {
+      if (g.remarksReadonly) {
+        g.remarksReadonly = false; renderGroups(); return;
+      }
+      await saveRemarksOnly(g);
+      g.remarksReadonly = true;
+      renderGroups();
+    });
     initDatePickers(sec);
 
     root.appendChild(sec);
@@ -167,7 +175,8 @@ function renderGroups() {
 }
 
 async function loadStaff() { const resp = await fetch(endpoint('/api/staff')); const data = await resp.json(); state.staff = data.staff || []; renderStaffList(); renderGroups(); }
-async function loadExistingRecords(g) { const resp = await fetch(endpoint(`/api/ot/entries?otstaffid=${encodeURIComponent(g.staff)}&date=${encodeURIComponent(g.date)}`)); if(!resp.ok){throw new Error(await resp.text());} const data = await resp.json(); const entries=data.entries||[]; g.existing = entries.map((e)=>({id:e.id,type:e.type,startTime:e.startTime,endTime:e.endTime})); g.remarks = typeof data.remarks === "string" ? data.remarks : (entries.length ? (entries[0].remarks || "") : g.remarks); }
+async function loadExistingRecords(g) { const resp = await fetch(endpoint(`/api/ot/entries?otstaffid=${encodeURIComponent(g.staff)}&date=${encodeURIComponent(g.date)}`)); if(!resp.ok){throw new Error(await resp.text());} const data = await resp.json(); const entries=data.entries||[]; g.existing = entries.map((e)=>({id:e.id,type:e.type,startTime:e.startTime,endTime:e.endTime})); g.hasPeriodRecord = !!data.exists; g.remarks = typeof data.remarks === "string" ? data.remarks : (entries.length ? (entries[0].remarks || "") : g.remarks); g.remarksReadonly = g.hasPeriodRecord; }
+async function saveRemarksOnly(g){ const resp = await fetch(endpoint('/api/ot/remarks'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({otstaffid:g.staff,date:g.date,remarks:g.remarks})}); if(!resp.ok){throw new Error(await resp.text());} }
 async function deleteExistingRecord(g,id){ const resp=await fetch(endpoint(`/api/ot/entry?id=${encodeURIComponent(id)}`),{method:'DELETE'}); if(resp.ok){await loadExistingRecords(g); renderGroups();}}
 async function confirmInput(g,msgEl){ msgEl.textContent=''; const p=/^([01]\d|2[0-3]):[0-5]\d$/; for(const r of g.rows){ if(!r.startTime||!r.endTime||!p.test(r.startTime)||!p.test(r.endTime)){msgEl.textContent='Start and End must be HH:MM and cannot be empty.';return;}}
  const all=[...g.existing.map((e)=>({type:e.type,startTime:e.startTime,endTime:e.endTime})),...g.rows.map((r)=>({type:r.type,startTime:r.startTime,endTime:r.endTime}))];
