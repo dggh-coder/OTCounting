@@ -21,16 +21,16 @@ CREATE TABLE IF NOT EXISTS ot_driverstd.otperiod (
     id         BIGSERIAL PRIMARY KEY,
     date       DATE NOT NULL,
     otstaffid  VARCHAR(64) NOT NULL,
-    period     CHAR(2) NOT NULL CHECK (period IN ('00', '01', '02')),
     remarks    VARCHAR(600),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uq_otperiod_staff_date_period UNIQUE (otstaffid, date, period)
+    CONSTRAINT uq_otperiod_staff_date UNIQUE (otstaffid, date)
 );
 
 CREATE TABLE IF NOT EXISTS ot_driverstd.otdetails (
     id         BIGSERIAL PRIMARY KEY,
     otid       BIGINT NOT NULL REFERENCES ot_driverstd.otperiod(id) ON DELETE CASCADE,
+    period     CHAR(2) NOT NULL CHECK (period IN ('00', '01', '02')),
     type       CHAR(2) NOT NULL CHECK (type IN ('00', '01')),
     starttime  VARCHAR(16) NOT NULL,
     endtime    VARCHAR(16) NOT NULL,
