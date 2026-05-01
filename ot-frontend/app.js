@@ -113,13 +113,12 @@ function renderGroups() {
       <table><thead><tr><th>Type</th><th>Start (HH:MM)</th><th>End (HH:MM)</th><th></th></tr></thead><tbody class="existing-body"></tbody></table>
       <div class="section-head"><h3>New Records</h3><button class="btn-ghost" data-action="add-row" type="button">Add Row</button></div>
       <table><thead><tr><th>Type</th><th>Start (HH:MM)</th><th>End (HH:MM)</th><th></th></tr></thead><tbody class="entry-body"></tbody></table>
-      <div class="actions"><button class="btn-primary" data-action="confirm" type="button">確認 Confirm</button></div>
+      <div class="actions"><button class="btn-primary" data-action="confirm" type="button" ${g.rows.length === 0 ? "disabled" : ""}>確認 Confirm</button></div>
       <div class="msg input-msg"></div>
     </div>`;
 
     sec.querySelectorAll("[data-k]").forEach((el) => el.addEventListener("change", (e) => { g[e.target.dataset.k] = e.target.value.trim(); }));
     sec.querySelector("[data-action='remove']").addEventListener("click", () => {
-      if (!window.confirm("Remove this OT Input block?")) return;
       state.groups = state.groups.filter((x) => x.id !== g.id); if (!state.groups.length) state.groups = [createGroup()]; renderGroups();
     });
     sec.querySelector("[data-action='next']").addEventListener("click", async () => {
@@ -154,7 +153,6 @@ function renderGroups() {
       tr.innerHTML = `<td><select data-k="type"><option value="00" ${r.type === "00" ? "selected" : ""}>OT</option><option value="01" ${r.type === "01" ? "selected" : ""}>Break</option></select></td><td><input data-k="startTime" placeholder="HH:MM" value="${r.startTime}"></td><td><input data-k="endTime" placeholder="HH:MM" value="${r.endTime}"></td><td><button type="button">Delete</button></td>`;
       tr.querySelectorAll("[data-k]").forEach((el) => el.addEventListener("change", (e) => { g.rows[idx][e.target.dataset.k] = e.target.value.trim(); }));
       tr.querySelector("button").addEventListener("click", () => {
-        if (!window.confirm("Delete this new row?")) return;
         g.rows.splice(idx, 1); renderGroups();
       });
       entryBody.appendChild(tr);
