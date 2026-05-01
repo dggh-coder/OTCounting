@@ -76,11 +76,7 @@ function renderGroups() {
       <label>Staff<select data-k="staff" ${g.locked ? "disabled" : ""}>${fillStaffOptions(g.staff)}</select></label>
       <label>Date<input data-k="date" type="date" value="${g.date}" ${g.locked ? "disabled" : ""}></label>
       <button class="btn-primary" data-action="next" type="button" ${g.locked ? "disabled" : ""}>Next</button>
-<<<<<<< codex/redesign-ot-input-sub-tab
       ${g.expanded ? `<label class="remarks-field">Remarks<input data-k="remarks" type="text" value="${g.remarks}" placeholder="optional"></label>` : ""}
-=======
-      ${g.expanded ? `<label>Remarks<input data-k="remarks" type="text" value="${g.remarks}" placeholder="optional"></label>` : ""}
->>>>>>> main
     </div>
     <div class="msg select-msg">${g.msg || ""}</div>
     <div class="period-area ${g.expanded ? "" : "hidden"}">
