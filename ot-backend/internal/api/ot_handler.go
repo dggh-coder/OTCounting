@@ -128,7 +128,12 @@ func (h *OTHandler) Get(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	_ = json.NewEncoder(w).Encode(map[string]any{"entries": entries})
+	remarks, err := h.Store.GetPeriodRemarks(r.Context(), staffID, date)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	_ = json.NewEncoder(w).Encode(map[string]any{"entries": entries, "remarks": remarks})
 }
 
 func (h *OTHandler) Monthly(w http.ResponseWriter, r *http.Request) {
