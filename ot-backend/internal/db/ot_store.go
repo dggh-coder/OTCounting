@@ -186,6 +186,7 @@ func (s *Store) GetPeriodRemarks(ctx context.Context, otstaffid, date string) (s
 	return "", nil
 }
 
+<<<<<<< codex/find-out-how-otperiod-remarks-trigger-save-m7ubx1
 func (s *Store) UpsertPeriodRemarks(ctx context.Context, otstaffid, date, remarks string) error {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -198,6 +199,8 @@ func (s *Store) UpsertPeriodRemarks(ctx context.Context, otstaffid, date, remark
 	return tx.Commit(ctx)
 }
 
+=======
+>>>>>>> main
 func getEntriesByFilters(ctx context.Context, q interface {
 	Query(context.Context, string, ...any) (pgx.Rows, error)
 }, otstaffid, date, period string) ([]SavedEntry, error) {
