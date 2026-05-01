@@ -66,7 +66,7 @@ function renderGroups() {
   const root = document.getElementById("ot-groups");
   root.innerHTML = "";
   state.groups.forEach((g) => {
-    const sec = document.createElement("section"); sec.className = "card ot-group-card";
+    const sec = document.createElement("section"); sec.className = `card ot-group-card${g.expanded ? " is-expanded" : ""}`;
     sec.innerHTML = `<button class="group-remove" data-action="remove" type="button" aria-label="Remove OT Input #${g.id}">×</button>
     <div class="ot-group-header">
       <h2>OT Input</h2>
