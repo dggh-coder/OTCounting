@@ -36,3 +36,9 @@ th,td{border:1px solid #ddd;padding:.5rem}
 .group-remove{position:absolute;right:-12px;top:-12px;width:28px;height:28px;padding:0;border:none;border-radius:6px;background:#ff4d4f;color:#fff;font-size:20px;line-height:28px;font-weight:700;box-shadow:0 6px 12px rgba(217,63,63,.4)}
 .group-remove:hover{background:#e13a3c}
 .group-remove:disabled{opacity:.55;cursor:not-allowed}
+
+.staff-table{width:100%;border-collapse:collapse;table-layout:fixed;background:#fff}
+.staff-table th,.staff-table td{border:1px solid #cfd7e6;padding:.55rem .6rem;text-align:left;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.staff-table th{background:#eef3ff;font-weight:700}
+.staff-table tbody tr:nth-child(even){background:#f8fbff}
+.staff-table td:last-child,.staff-table th:last-child{text-align:center;width:110px}

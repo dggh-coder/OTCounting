@@ -42,23 +42,24 @@ function fillStaffOptions(selected) {
       .map((s) => `<option value="${s.staffid}" ${selected === s.staffid ? "selected" : ""}>${s.displayname || s.staffid} (${s.staffid})</option>`)).join("");
 }
 
-function renderStaffList() { /* unchanged */
-  const root = document.getElementById("staff-list"); root.innerHTML = "";
+function renderStaffList() {
+  const root = document.getElementById("staff-list");
+  root.innerHTML = "";
   if (state.staff.length === 0) { root.textContent = "No staff found."; return; }
+
+  const table = document.createElement("table");
+  table.className = "staff-table";
+  table.innerHTML = `<thead><tr><th>ID</th><th>Eng</th><th>Chi</th><th>Display</th><th>Domain</th><th>Group</th><th>Action</th></tr></thead><tbody></tbody>`;
+  const tbody = table.querySelector("tbody");
+
   state.staff.forEach((s) => {
-    const div = document.createElement("div"); div.className = "staff-item";
-    div.innerHTML = `<div class="staff-item__meta">
-      <span class="pill"><strong>ID</strong> ${s.staffid}</span>
-      <span class="pill"><strong>Eng</strong> ${s.nameeng || "-"}</span>
-      <span class="pill"><strong>Chi</strong> ${s.namechi || "-"}</span>
-      <span class="pill"><strong>Display</strong> ${s.displayname || "-"}</span>
-      <span class="pill"><strong>Domain</strong> ${s.domainname || "-"}</span>
-      <span class="pill"><strong>Group</strong> ${s.staffgroup || "-"}</span>
-    </div>
-    <button class="btn-danger" data-action="delete-staff" data-staffid="${s.staffid}" type="button">Delete</button>`;
-    div.querySelector("[data-action='delete-staff']").addEventListener("click", async (e) => deleteStaff(e.target.dataset.staffid));
-    root.appendChild(div);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${s.staffid || "-"}</td><td>${s.nameeng || "-"}</td><td>${s.namechi || "-"}</td><td>${s.displayname || "-"}</td><td>${s.domainname || "-"}</td><td>${s.staffgroup || "-"}</td><td><button class="btn-danger" data-action="delete-staff" data-staffid="${s.staffid}" type="button">Delete</button></td>`;
+    tr.querySelector("[data-action='delete-staff']").addEventListener("click", async (e) => deleteStaff(e.target.dataset.staffid));
+    tbody.appendChild(tr);
   });
+
+  root.appendChild(table);
 }
 
 function renderGroups() {
