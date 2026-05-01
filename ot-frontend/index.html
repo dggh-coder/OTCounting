@@ -19,7 +19,7 @@
     <section id="view-home" class="page-view">
       <section class="hero">
         <h1>Welcome</h1>
-        <p>Home view for OT platform. No hyperlinks here; pure UI area for animation and message blocks.</p>
+        <p>OT platform</p>
         <div class="pulse-wrap" aria-hidden="true"><span></span><span></span><span></span></div>
         <p id="live-clock" class="clock">--:--:--</p>
       </section>
@@ -35,8 +35,7 @@
       <section id="tab-ot" class="tab-content">
         <section class="card">
           <h2>OT Input</h2>
-          <button id="add-group" type="button">+ Add Staff + Date</button>
-          <p class="hint">Click Next to show period rows under the same Staff + Date + Remarks block. Existing records remain visible.</p>
+          <button id="add-group" type="button">New Record</button>
         </section>
         <div id="ot-groups"></div>
       </section>
@@ -46,7 +45,7 @@
           <h2>Staff Input</h2>
           <div class="row">
             <label>Staff No (ID)
-              <input id="staff-id" type="text" placeholder="e.g. S1001">
+              <input id="staff-id" type="text" placeholder="6 digits">
             </label>
             <label>Staff Name (Eng)
               <input id="staff-nameeng" type="text" placeholder="optional">
@@ -61,7 +60,7 @@
               <input id="staff-domainname" type="text" placeholder="optional">
             </label>
             <label>Staff Group
-              <input id="staff-staffgroup" type="text" placeholder="optional; must match backend staffgroup field">
+              <input id="staff-staffgroup" type="text" placeholder="optional">
             </label>
             <button id="save-staff" type="button">Save Staff</button>
           </div>
