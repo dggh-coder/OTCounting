@@ -14,10 +14,17 @@ function createGroup() { return { id: state.nextGroupId++, staff: "", date: "", 
 
 
 function switchTopView(viewName){
+  const showingDriverShell = viewName === "driver" || viewName === "staffmgmt";
   ["home","driver"].forEach((n)=>{
-    document.getElementById(`view-${n}`)?.classList.toggle("hidden", n!==viewName);
+    const shouldShow = (n === "driver" && showingDriverShell) || n === viewName;
+    document.getElementById(`view-${n}`)?.classList.toggle("hidden", !shouldShow);
   });
   document.querySelectorAll('.top-link').forEach((b)=>b.classList.toggle('active', b.dataset.view===viewName));
+  if (viewName === "driver") {
+    setDriverMode("ot");
+  } else if (viewName === "staffmgmt") {
+    setDriverMode("staff");
+  }
 }
 
 function startClock(){
@@ -34,6 +41,14 @@ function switchTab(tabName) {
     if (section) section.classList.toggle("hidden", n !== tabName);
     if (button) button.classList.toggle("active", n === tabName);
   });
+}
+
+function setDriverMode(mode) {
+  const otBtn = document.getElementById("tab-btn-ot");
+  const staffBtn = document.getElementById("tab-btn-staff");
+  if (otBtn) otBtn.classList.toggle("hidden", mode !== "ot");
+  if (staffBtn) staffBtn.classList.toggle("hidden", mode !== "staff");
+  switchTab(mode);
 }
 
 function fillStaffOptions(selected) {
