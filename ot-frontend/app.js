@@ -68,12 +68,12 @@ function renderGroups() {
   state.groups.forEach((g) => {
     const sec = document.createElement("section"); sec.className = "card ot-group-card";
     sec.innerHTML = `<button class="group-remove" data-action="remove" type="button" aria-label="Remove OT Input #${g.id}">×</button>
-    <h2>OT Input #${g.id}</h2>
+    <h2>OT Input</h2>
     <div class="row">
       <label>Staff<select data-k="staff" ${g.locked ? "disabled" : ""}>${fillStaffOptions(g.staff)}</select></label>
       <label>Date<input data-k="date" type="date" value="${g.date}" ${g.locked ? "disabled" : ""}></label>
-      ${g.expanded ? `<label>Remarks<input data-k="remarks" type="text" value="${g.remarks}" placeholder="optional"></label>` : ""}
       <button data-action="next" type="button" ${g.locked ? "disabled" : ""}>Next</button>
+      ${g.expanded ? `<label>Remarks<input data-k="remarks" type="text" value="${g.remarks}" placeholder="optional"></label>` : ""}
     </div>
     <div class="msg select-msg">${g.msg || ""}</div>
     <div class="period-area ${g.expanded ? "" : "hidden"}">

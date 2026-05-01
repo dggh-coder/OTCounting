@@ -33,7 +33,7 @@ th,td{border:1px solid #ddd;padding:.5rem}
 }
 
 .ot-group-card{position:relative;overflow:visible}
-.group-remove{position:absolute;right:-12px;top:-12px;width:28px;height:28px;padding:0;border:none;border-radius:6px;background:#ff4d4f;color:#fff;font-size:20px;line-height:28px;font-weight:700;box-shadow:0 6px 12px rgba(217,63,63,.4)}
+.group-remove{position:absolute;right:-24px;top:-24px;width:56px;height:56px;padding:0;border:none;border-radius:6px;background:#ff4d4f;color:#fff;font-size:36px;line-height:56px;font-weight:700;box-shadow:0 6px 12px rgba(217,63,63,.4)}
 .group-remove:hover{background:#e13a3c}
 .group-remove:disabled{opacity:.55;cursor:not-allowed}
 
