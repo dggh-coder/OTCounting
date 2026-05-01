@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -312,6 +313,8 @@ func (s *Store) rebuildPeriodResultTx(ctx context.Context, tx pgx.Tx, periodID i
 	if err := rows.Err(); err != nil {
 		return err
 	}
+	otRanges = mergeTimeSpans(otRanges)
+	breakRanges = mergeTimeSpans(breakRanges)
 
 	rate15Parts := []string{}
 	rate20Parts := []string{}
@@ -448,6 +451,32 @@ func subtractTmRange(segments []timeSpan, sub timeSpan) []timeSpan {
 		}
 	}
 	return out
+}
+
+func mergeTimeSpans(in []timeSpan) []timeSpan {
+	if len(in) <= 1 {
+		return in
+	}
+	ranges := make([]timeSpan, len(in))
+	copy(ranges, in)
+	sort.Slice(ranges, func(i, j int) bool {
+		if ranges[i].start.Equal(ranges[j].start) {
+			return ranges[i].end.Before(ranges[j].end)
+		}
+		return ranges[i].start.Before(ranges[j].start)
+	})
+	merged := []timeSpan{ranges[0]}
+	for _, cur := range ranges[1:] {
+		last := &merged[len(merged)-1]
+		if !cur.start.After(last.end) {
+			if cur.end.After(last.end) {
+				last.end = cur.end
+			}
+			continue
+		}
+		merged = append(merged, cur)
+	}
+	return merged
 }
 
 func splitSegmentsByRate(seg timeSpan) ([]string, []string) {
