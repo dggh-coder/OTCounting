@@ -68,20 +68,23 @@ function renderGroups() {
   state.groups.forEach((g) => {
     const sec = document.createElement("section"); sec.className = "card ot-group-card";
     sec.innerHTML = `<button class="group-remove" data-action="remove" type="button" aria-label="Remove OT Input #${g.id}">×</button>
-    <h2>OT Input</h2>
-    <div class="row">
+    <div class="ot-group-header">
+      <h2>OT Input</h2>
+      ${g.locked ? `<span class="status-pill">Locked</span>` : `<span class="status-pill status-pill--draft">Draft</span>`}
+    </div>
+    <div class="row ot-group-form">
       <label>Staff<select data-k="staff" ${g.locked ? "disabled" : ""}>${fillStaffOptions(g.staff)}</select></label>
       <label>Date<input data-k="date" type="date" value="${g.date}" ${g.locked ? "disabled" : ""}></label>
-      <button data-action="next" type="button" ${g.locked ? "disabled" : ""}>Next</button>
+      <button class="btn-primary" data-action="next" type="button" ${g.locked ? "disabled" : ""}>Next</button>
       ${g.expanded ? `<label>Remarks<input data-k="remarks" type="text" value="${g.remarks}" placeholder="optional"></label>` : ""}
     </div>
     <div class="msg select-msg">${g.msg || ""}</div>
     <div class="period-area ${g.expanded ? "" : "hidden"}">
       <h3>Existing Records (Read-only, can delete)</h3>
       <table><thead><tr><th>Type</th><th>Start (HH:MM)</th><th>End (HH:MM)</th><th></th></tr></thead><tbody class="existing-body"></tbody></table>
-      <h3>New Records</h3><button data-action="add-row" type="button">Add Row</button>
+      <div class="section-head"><h3>New Records</h3><button class="btn-ghost" data-action="add-row" type="button">Add Row</button></div>
       <table><thead><tr><th>Type</th><th>Start (HH:MM)</th><th>End (HH:MM)</th><th></th></tr></thead><tbody class="entry-body"></tbody></table>
-      <div class="actions"><button data-action="confirm" type="button">確認 Confirm</button></div>
+      <div class="actions"><button class="btn-primary" data-action="confirm" type="button">確認 Confirm</button></div>
       <div class="msg input-msg"></div>
     </div>`;
 
