@@ -37,6 +37,32 @@ th,td{border:1px solid #ddd;padding:.5rem}
 .status-pill{display:inline-flex;align-items:center;padding:.2rem .7rem;border-radius:999px;font-size:.8rem;font-weight:700;background:#e8f7ee;color:#1d8744;border:1px solid #b8e6c8}
 .status-pill--draft{background:#fff7e6;color:#a46300;border-color:#f5d59a}
 .ot-group-form{background:linear-gradient(180deg,#f6f9ff,#eef4ff);border:1px solid #dce7fb;border-radius:12px;padding:.9rem}
+.ot-group-form label{
+  color:#0f2f70;
+  font-weight:800;
+  font-size:1.08rem;
+  letter-spacing:.01em;
+}
+.ot-group-form input,
+.ot-group-form select{
+  height:44px;
+  font-size:1.05rem;
+  border:1px solid #b7c8ea;
+  box-shadow:0 1px 0 rgba(20,46,99,.04) inset;
+}
+.ot-group-form input[type="date"]{
+  min-width:250px;
+  padding-right:.75rem;
+}
+.ot-group-form input[type="date"]::-webkit-calendar-picker-indicator{
+  cursor:pointer;
+  transform:scale(1.25);
+  opacity:.95;
+}
+.ot-group-form input[type="date"]::-webkit-datetime-edit{
+  font-weight:700;
+  letter-spacing:.02em;
+}
 .group-remove{position:absolute;right:-28px;top:16px;width:56px;height:56px;padding:0;border:none;border-radius:6px;background:#ff4d4f;color:#fff;font-size:36px;line-height:56px;font-weight:700;box-shadow:0 6px 12px rgba(217,63,63,.4);z-index:2}
 .ot-group-card.is-expanded .group-remove{top:132px}
 .group-remove{position:absolute;right:-24px;top:-8px;width:56px;height:56px;padding:0;border:none;border-radius:6px;background:#ff4d4f;color:#fff;font-size:36px;line-height:56px;font-weight:700;box-shadow:0 6px 12px rgba(217,63,63,.4)}
