@@ -191,7 +191,12 @@ async function deleteStaff(staffid){const msg=document.getElementById('staff-msg
 
 function bindEvents(){
   document.querySelectorAll('.tab-btn').forEach((btn)=>btn.addEventListener('click', function(){switchTab(this.getAttribute('data-tab'));}));
-  document.querySelectorAll('.top-link').forEach((btn)=>btn.addEventListener('click', function(){switchTopView(this.getAttribute('data-view'));}));
+  document.querySelectorAll('.top-link').forEach((btn)=>btn.addEventListener('click', function(){
+    const view = this.getAttribute('data-view');
+    const targetTab = this.getAttribute('data-tab-target');
+    switchTopView(view);
+    if (view === 'driver' && targetTab) switchTab(targetTab);
+  }));
   document.getElementById('save-staff')?.addEventListener('click',saveStaff);
   document.getElementById('add-group')?.addEventListener('click',()=>{state.groups.push(createGroup()); renderGroups();});
 }
