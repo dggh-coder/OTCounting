@@ -33,9 +33,25 @@ th,td{border:1px solid #ddd;padding:.5rem}
 }
 
 .ot-group-card{position:relative;overflow:visible}
-.group-remove{position:absolute;right:-24px;top:-24px;width:56px;height:56px;padding:0;border:none;border-radius:6px;background:#ff4d4f;color:#fff;font-size:36px;line-height:56px;font-weight:700;box-shadow:0 6px 12px rgba(217,63,63,.4)}
+.ot-group-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.8rem}
+.status-pill{display:inline-flex;align-items:center;padding:.2rem .7rem;border-radius:999px;font-size:.8rem;font-weight:700;background:#e8f7ee;color:#1d8744;border:1px solid #b8e6c8}
+.status-pill--draft{background:#fff7e6;color:#a46300;border-color:#f5d59a}
+.ot-group-form{background:linear-gradient(180deg,#f6f9ff,#eef4ff);border:1px solid #dce7fb;border-radius:12px;padding:.9rem}
+.group-remove{position:absolute;right:-28px;top:16px;width:56px;height:56px;padding:0;border:none;border-radius:6px;background:#ff4d4f;color:#fff;font-size:36px;line-height:56px;font-weight:700;box-shadow:0 6px 12px rgba(217,63,63,.4);z-index:2}
+.ot-group-card.is-expanded .group-remove{top:132px}
 .group-remove:hover{background:#e13a3c}
 .group-remove:disabled{opacity:.55;cursor:not-allowed}
+.period-area{margin-top:1rem;padding:1rem;border-radius:12px;background:#fbfcff;border:1px solid #dfe7f6}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-top:.5rem}
+.section-head h3{margin:.2rem 0}
+.btn-primary{background:linear-gradient(120deg,var(--accent),var(--accent2));border:none;color:#fff;font-weight:700;box-shadow:0 8px 18px rgba(47,123,255,.25)}
+.btn-primary:disabled{background:#d5dff1;color:#7c8aa8;box-shadow:none}
+.btn-ghost{background:#f3f7ff;border:1px solid #c8d9f7;color:#1f4fa3;font-weight:600}
+.ot-group-card h3{font-size:1.05rem;margin:1rem 0 .45rem}
+.ot-group-card table th{background:#f1f5ff}
+.ot-group-card .actions{justify-content:flex-end;margin-top:.75rem}
+.remarks-field{min-width:420px}
+.remarks-field input{min-width:420px}
 
 .staff-table{width:100%;border-collapse:collapse;table-layout:fixed;background:#fff}
 .staff-table th,.staff-table td{border:1px solid #cfd7e6;padding:.55rem .6rem;text-align:left;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
