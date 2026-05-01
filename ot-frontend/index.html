@@ -7,58 +7,74 @@
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <main>
-    <h1>OT Management</h1>
-    <nav class="tabs">
-      <button id="tab-btn-ot" class="tab-btn active" data-tab="ot" type="button">OT Input</button>
-      <button id="tab-btn-staff" class="tab-btn" data-tab="staff" type="button">Staff Input</button>
+  <header class="topbar">
+    <div class="logo-slot">LOGO</div>
+    <nav class="top-links">
+      <button class="top-link active" data-view="home" type="button">Home</button>
+      <button class="top-link" data-view="driver" type="button">OT (Driver)</button>
     </nav>
+  </header>
 
-
-    <section id="tab-ot" class="tab-content">
-      <section class="card">
-        <h2>OT Input</h2>
-        <button id="add-group" type="button">+ Add Staff + Date</button>
-        <p class="hint">Click Next to show period rows under the same Staff + Date + Remarks block. Existing records remain visible.</p>
-      </section>
-      <div id="ot-groups"></div>
-    </section>
-
-
-    <section id="tab-staff" class="tab-content hidden">
-      <section class="card">
-        <h2>Staff Input</h2>
-        <div class="row">
-          <label>Staff No (ID)
-            <input id="staff-id" type="text" placeholder="e.g. S1001">
-          </label>
-          <label>Staff Name (Eng)
-            <input id="staff-nameeng" type="text" placeholder="optional">
-          </label>
-          <label>Staff Name (Chi)
-            <input id="staff-namechi" type="text" placeholder="optional">
-          </label>
-          <label>Display Name
-            <input id="staff-displayname" type="text" placeholder="optional">
-          </label>
-          <label>Domain Name
-            <input id="staff-domainname" type="text" placeholder="optional">
-          </label>
-          <label>Staff Group
-            <input id="staff-staffgroup" type="text" placeholder="optional; must match backend staffgroup field">
-          </label>
-          <button id="save-staff" type="button">Save Staff</button>
-        </div>
-        <p class="hint">Only Staff No is required. Include Staff Group when available (this maps to backend POST field <code>staffgroup</code>). OT Input staff dropdown only shows <code>driver</code> group members. Current Staff also displays <code>staffgroup</code> from backend GET, and supports delete via backend DELETE API.</p>
-        <div id="staff-msg" class="msg"></div>
-      </section>
-      <section class="card">
-        <h2>Current Staff</h2>
-        <div id="staff-list"></div>
+  <main>
+    <section id="view-home" class="page-view">
+      <section class="hero">
+        <h1>Welcome</h1>
+        <p>Home view for OT platform. No hyperlinks here; pure UI area for animation and message blocks.</p>
+        <div class="pulse-wrap" aria-hidden="true"><span></span><span></span><span></span></div>
+        <p id="live-clock" class="clock">--:--:--</p>
       </section>
     </section>
 
+    <section id="view-driver" class="page-view hidden">
+      <h1>Driver OT Management</h1>
+      <nav class="tabs">
+        <button id="tab-btn-ot" class="tab-btn active" data-tab="ot" type="button">OT Input</button>
+        <button id="tab-btn-staff" class="tab-btn" data-tab="staff" type="button">Staff Input</button>
+      </nav>
+
+      <section id="tab-ot" class="tab-content">
+        <section class="card">
+          <h2>OT Input</h2>
+          <button id="add-group" type="button">+ Add Staff + Date</button>
+          <p class="hint">Click Next to show period rows under the same Staff + Date + Remarks block. Existing records remain visible.</p>
+        </section>
+        <div id="ot-groups"></div>
+      </section>
+
+      <section id="tab-staff" class="tab-content hidden">
+        <section class="card">
+          <h2>Staff Input</h2>
+          <div class="row">
+            <label>Staff No (ID)
+              <input id="staff-id" type="text" placeholder="e.g. S1001">
+            </label>
+            <label>Staff Name (Eng)
+              <input id="staff-nameeng" type="text" placeholder="optional">
+            </label>
+            <label>Staff Name (Chi)
+              <input id="staff-namechi" type="text" placeholder="optional">
+            </label>
+            <label>Display Name
+              <input id="staff-displayname" type="text" placeholder="optional">
+            </label>
+            <label>Domain Name
+              <input id="staff-domainname" type="text" placeholder="optional">
+            </label>
+            <label>Staff Group
+              <input id="staff-staffgroup" type="text" placeholder="optional; must match backend staffgroup field">
+            </label>
+            <button id="save-staff" type="button">Save Staff</button>
+          </div>
+          <p class="hint">Only Staff No is required. Include Staff Group when available (this maps to backend POST field <code>staffgroup</code>). OT Input staff dropdown only shows <code>driver</code> group members. Current Staff also displays <code>staffgroup</code> from backend GET, and supports delete via backend DELETE API.</p>
+          <div id="staff-msg" class="msg"></div>
+        </section>
+        <section class="card">
+          <h2>Current Staff</h2>
+          <div id="staff-list"></div>
+        </section>
+      </section>
+    </section>
   </main>
-  <script src="./app.js?v=20260430c"></script>
+  <script src="./app.js?v=20260501a"></script>
 </body>
 </html>
