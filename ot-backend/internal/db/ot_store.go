@@ -166,11 +166,27 @@ func (s *Store) GetEntries(ctx context.Context, otstaffid, date, period string) 
 	return getEntriesByFilters(ctx, s.pool, otstaffid, date, period)
 }
 
+func (s *Store) GetPeriodRemarks(ctx context.Context, otstaffid, date string) (string, error) {
+	var remarks string
+	err := s.pool.QueryRow(ctx, `
+		SELECT COALESCE(remarks, ''::varchar(600))
+		FROM ot_driverstd.otperiod
+		WHERE otstaffid = $1 AND date = $2::date
+	`, otstaffid, date).Scan(&remarks)
+	if err == pgx.ErrNoRows {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return remarks, nil
+}
+
 func getEntriesByFilters(ctx context.Context, q interface {
 	Query(context.Context, string, ...any) (pgx.Rows, error)
 }, otstaffid, date, period string) ([]SavedEntry, error) {
 	rows, err := q.Query(ctx, `
-			SELECT d.id, d.otid, p.otstaffid, to_char(p.date, 'YYYY-MM-DD'), d.period, COALESCE(p.remarks, ''), d.type,
+			SELECT d.id, d.otid, p.otstaffid, to_char(p.date, 'YYYY-MM-DD'), d.period, COALESCE(p.remarks, ''::varchar(600)), d.type,
 			       d.starttime,
 			       d.endtime,
 			       d.inputby
