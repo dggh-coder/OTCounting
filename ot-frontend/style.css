@@ -63,6 +63,32 @@ th,td{border:1px solid #ddd;padding:.5rem}
   font-weight:700;
   letter-spacing:.02em;
 }
+.ot-group-form select{
+  font-weight:700;
+  color:#0e2d69;
+}
+.ot-group-form select option{
+  font-weight:700;
+  font-size:1rem;
+}
+
+.flatpickr-calendar{
+  transform:scale(1.15);
+  transform-origin:top left;
+  font-size:1rem;
+}
+.flatpickr-months .flatpickr-month{
+  font-size:1.05rem;
+  font-weight:700;
+}
+.flatpickr-current-month .flatpickr-monthDropdown-months,
+.flatpickr-current-month input.cur-year{
+  font-size:1rem;
+  font-weight:700;
+}
+.flatpickr-weekday,.flatpickr-day{
+  font-size:.98rem;
+}
 .group-remove{position:absolute;right:-28px;top:16px;width:56px;height:56px;padding:0;border:none;border-radius:6px;background:#ff4d4f;color:#fff;font-size:36px;line-height:56px;font-weight:700;box-shadow:0 6px 12px rgba(217,63,63,.4);z-index:2}
 .ot-group-card.is-expanded .group-remove{top:132px}
 .group-remove{position:absolute;right:-24px;top:-8px;width:56px;height:56px;padding:0;border:none;border-radius:6px;background:#ff4d4f;color:#fff;font-size:36px;line-height:56px;font-weight:700;box-shadow:0 6px 12px rgba(217,63,63,.4)}

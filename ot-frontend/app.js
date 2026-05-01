@@ -57,6 +57,19 @@ function fillStaffOptions(selected) {
       .map((s) => `<option value="${s.staffid}" ${selected === s.staffid ? "selected" : ""}>${s.displayname || s.staffid} (${s.staffid})</option>`)).join("");
 }
 
+function initDatePickers(scopeEl) {
+  if (!window.flatpickr || !scopeEl) return;
+  scopeEl.querySelectorAll("input.js-date-picker").forEach((el) => {
+    if (el._flatpickr) return;
+    flatpickr(el, {
+      dateFormat: "Y-m-d",
+      allowInput: true,
+      clickOpens: !el.disabled,
+      disableMobile: true
+    });
+  });
+}
+
 function renderStaffList() {
   const root = document.getElementById("staff-list");
   root.innerHTML = "";
@@ -89,7 +102,7 @@ function renderGroups() {
     </div>
     <div class="row ot-group-form">
       <label>Staff<select data-k="staff" ${g.locked ? "disabled" : ""}>${fillStaffOptions(g.staff)}</select></label>
-      <label>Date<input data-k="date" type="date" value="${g.date}" ${g.locked ? "disabled" : ""}></label>
+      <label>Date<input data-k="date" class="js-date-picker" type="text" value="${g.date}" placeholder="YYYY-MM-DD" ${g.locked ? "disabled" : ""}></label>
       <button class="btn-primary" data-action="next" type="button" ${g.locked ? "disabled" : ""}>Next</button>
       ${g.expanded ? `<label class="remarks-field">Remarks<input data-k="remarks" type="text" value="${g.remarks}" placeholder="optional"></label>` : ""}
     </div>
@@ -141,6 +154,7 @@ function renderGroups() {
     });
     sec.querySelector("[data-action='add-row']").addEventListener("click", () => { g.rows.push(rowTemplate()); renderGroups(); });
     sec.querySelector("[data-action='confirm']").addEventListener("click", async () => { await confirmInput(g, sec.querySelector('.input-msg')); });
+    initDatePickers(sec);
 
     root.appendChild(sec);
   });
