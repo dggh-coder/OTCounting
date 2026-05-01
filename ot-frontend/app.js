@@ -76,7 +76,11 @@ function renderGroups() {
       <label>Staff<select data-k="staff" ${g.locked ? "disabled" : ""}>${fillStaffOptions(g.staff)}</select></label>
       <label>Date<input data-k="date" type="date" value="${g.date}" ${g.locked ? "disabled" : ""}></label>
       <button class="btn-primary" data-action="next" type="button" ${g.locked ? "disabled" : ""}>Next</button>
+<<<<<<< codex/redesign-ot-input-sub-tab
+      ${g.expanded ? `<label class="remarks-field">Remarks<input data-k="remarks" type="text" value="${g.remarks}" placeholder="optional"></label>` : ""}
+=======
       ${g.expanded ? `<label>Remarks<input data-k="remarks" type="text" value="${g.remarks}" placeholder="optional"></label>` : ""}
+>>>>>>> main
     </div>
     <div class="msg select-msg">${g.msg || ""}</div>
     <div class="period-area ${g.expanded ? "" : "hidden"}">
@@ -89,7 +93,10 @@ function renderGroups() {
     </div>`;
 
     sec.querySelectorAll("[data-k]").forEach((el) => el.addEventListener("change", (e) => { g[e.target.dataset.k] = e.target.value.trim(); }));
-    sec.querySelector("[data-action='remove']").addEventListener("click", () => { state.groups = state.groups.filter((x) => x.id !== g.id); if (!state.groups.length) state.groups = [createGroup()]; renderGroups(); });
+    sec.querySelector("[data-action='remove']").addEventListener("click", () => {
+      if (!window.confirm("Remove this OT Input block?")) return;
+      state.groups = state.groups.filter((x) => x.id !== g.id); if (!state.groups.length) state.groups = [createGroup()]; renderGroups();
+    });
     sec.querySelector("[data-action='next']").addEventListener("click", async () => {
       if (!g.staff || !g.date) { g.msg = "Please select both staff and date."; renderGroups(); return; }
       const dup = state.groups.find((x) => x.id !== g.id && x.staff === g.staff && x.date === g.date);
@@ -104,7 +111,10 @@ function renderGroups() {
     g.existing.forEach((r) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `<td>${r.type === "00" ? "OT" : "Break"}</td><td>${r.startTime}</td><td>${r.endTime}</td><td><button type="button">Delete</button></td>`;
-      tr.querySelector("button").addEventListener("click", async () => { await deleteExistingRecord(g, r.id); });
+      tr.querySelector("button").addEventListener("click", async () => {
+        if (!window.confirm("Delete this existing record?")) return;
+        await deleteExistingRecord(g, r.id);
+      });
       existingBody.appendChild(tr);
     });
     const entryBody = sec.querySelector(".entry-body"); entryBody.innerHTML = "";
@@ -112,7 +122,10 @@ function renderGroups() {
       const tr = document.createElement("tr");
       tr.innerHTML = `<td><select data-k="type"><option value="00" ${r.type === "00" ? "selected" : ""}>OT</option><option value="01" ${r.type === "01" ? "selected" : ""}>Break</option></select></td><td><input data-k="startTime" placeholder="HH:MM" value="${r.startTime}"></td><td><input data-k="endTime" placeholder="HH:MM" value="${r.endTime}"></td><td><button type="button">Delete</button></td>`;
       tr.querySelectorAll("[data-k]").forEach((el) => el.addEventListener("change", (e) => { g.rows[idx][e.target.dataset.k] = e.target.value.trim(); }));
-      tr.querySelector("button").addEventListener("click", () => { g.rows.splice(idx, 1); renderGroups(); });
+      tr.querySelector("button").addEventListener("click", () => {
+        if (!window.confirm("Delete this new row?")) return;
+        g.rows.splice(idx, 1); renderGroups();
+      });
       entryBody.appendChild(tr);
     });
     sec.querySelector("[data-action='add-row']").addEventListener("click", () => { g.rows.push(rowTemplate()); renderGroups(); });
@@ -134,7 +147,7 @@ async function saveStaff(){/* unchanged simplified */
   const staffid=document.getElementById('staff-id').value.trim(); const nameeng=document.getElementById('staff-nameeng').value.trim(); const namechi=document.getElementById('staff-namechi').value.trim(); const displayname=document.getElementById('staff-displayname').value.trim(); const domainname=document.getElementById('staff-domainname').value.trim(); const staffgroup=document.getElementById('staff-staffgroup').value.trim(); if(!staffid){msg.textContent='Staff No (ID) is required.';return;}
   const resp=await fetch(endpoint('/api/staff/input'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({staffid,nameeng,namechi,displayname,domainname,staffgroup})}); if(!resp.ok){msg.textContent=await resp.text();return;} ['staff-id','staff-nameeng','staff-namechi','staff-displayname','staff-domainname','staff-staffgroup'].forEach((id)=>document.getElementById(id).value=''); msg.style.color='#0a7a2f'; msg.textContent='Staff saved.'; await loadStaff();
 }
-async function deleteStaff(staffid){const msg=document.getElementById('staff-msg'); msg.textContent=''; const resp=await fetch(endpoint(`/api/staff?staffid=${encodeURIComponent(staffid)}`),{method:'DELETE'}); if(!resp.ok){msg.textContent=await resp.text();return;} msg.style.color='#0a7a2f'; msg.textContent=`Staff ${staffid} deleted.`; await loadStaff();}
+async function deleteStaff(staffid){const msg=document.getElementById('staff-msg'); msg.textContent=''; if(!window.confirm(`Delete staff ${staffid}?`)) return; const resp=await fetch(endpoint(`/api/staff?staffid=${encodeURIComponent(staffid)}`),{method:'DELETE'}); if(!resp.ok){msg.textContent=await resp.text();return;} msg.style.color='#0a7a2f'; msg.textContent=`Staff ${staffid} deleted.`; await loadStaff();}
 
 function bindEvents(){
   document.querySelectorAll('.tab-btn').forEach((btn)=>btn.addEventListener('click', function(){switchTab(this.getAttribute('data-tab'));}));
