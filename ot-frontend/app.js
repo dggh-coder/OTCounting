@@ -9,7 +9,7 @@ const state = {
 
 function endpoint(path) { return API_BASE ? `${API_BASE}${path}` : path; }
 function rowTemplate() { return { type: "00", startTime: "", endTime: "" }; }
-function createGroup() { return { id: state.nextGroupId++, staff: "", date: "", remarks: "", expanded: false, rows: [], existing: [], msg: "" }; }
+function createGroup() { return { id: state.nextGroupId++, staff: "", date: "", remarks: "", expanded: false, locked: false, rows: [], existing: [], msg: "" }; }
 
 
 
@@ -65,14 +65,14 @@ function renderGroups() {
   const root = document.getElementById("ot-groups");
   root.innerHTML = "";
   state.groups.forEach((g) => {
-    const sec = document.createElement("section"); sec.className = "card";
-    sec.innerHTML = `<h2>OT Input #${g.id}</h2>
+    const sec = document.createElement("section"); sec.className = "card ot-group-card";
+    sec.innerHTML = `<button class="group-remove" data-action="remove" type="button" aria-label="Remove OT Input #${g.id}">×</button>
+    <h2>OT Input #${g.id}</h2>
     <div class="row">
-      <label>Staff<select data-k="staff">${fillStaffOptions(g.staff)}</select></label>
-      <label>Date<input data-k="date" type="date" value="${g.date}"></label>
-      <label>Remarks<input data-k="remarks" type="text" value="${g.remarks}" placeholder="optional"></label>
-      <button data-action="next" type="button">Next</button>
-      <button data-action="remove" type="button">-</button>
+      <label>Staff<select data-k="staff" ${g.locked ? "disabled" : ""}>${fillStaffOptions(g.staff)}</select></label>
+      <label>Date<input data-k="date" type="date" value="${g.date}" ${g.locked ? "disabled" : ""}></label>
+      ${g.expanded ? `<label>Remarks<input data-k="remarks" type="text" value="${g.remarks}" placeholder="optional"></label>` : ""}
+      <button data-action="next" type="button" ${g.locked ? "disabled" : ""}>Next</button>
     </div>
     <div class="msg select-msg">${g.msg || ""}</div>
     <div class="period-area ${g.expanded ? "" : "hidden"}">
@@ -90,7 +90,7 @@ function renderGroups() {
       if (!g.staff || !g.date) { g.msg = "Please select both staff and date."; renderGroups(); return; }
       const dup = state.groups.find((x) => x.id !== g.id && x.staff === g.staff && x.date === g.date);
       if (dup) { g.msg = "Same Staff + Date already exists on this page."; renderGroups(); return; }
-      g.msg = ""; g.expanded = true; if (g.rows.length === 0) g.rows = [rowTemplate()];
+      g.msg = ""; g.expanded = true; g.locked = true; if (g.rows.length === 0) g.rows = [rowTemplate()];
       await loadExistingRecords(g); renderGroups();
     });
 
