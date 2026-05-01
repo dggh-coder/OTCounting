@@ -14,10 +14,17 @@ function createGroup() { return { id: state.nextGroupId++, staff: "", date: "", 
 
 
 function switchTopView(viewName){
+  const showingDriverShell = viewName === "driver" || viewName === "staffmgmt";
   ["home","driver"].forEach((n)=>{
-    document.getElementById(`view-${n}`)?.classList.toggle("hidden", n!==viewName);
+    const shouldShow = (n === "driver" && showingDriverShell) || n === viewName;
+    document.getElementById(`view-${n}`)?.classList.toggle("hidden", !shouldShow);
   });
   document.querySelectorAll('.top-link').forEach((b)=>b.classList.toggle('active', b.dataset.view===viewName));
+  if (viewName === "driver") {
+    setDriverMode("ot");
+  } else if (viewName === "staffmgmt") {
+    setDriverMode("staff");
+  }
 }
 
 function startClock(){
@@ -36,10 +43,31 @@ function switchTab(tabName) {
   });
 }
 
+function setDriverMode(mode) {
+  const otBtn = document.getElementById("tab-btn-ot");
+  const staffBtn = document.getElementById("tab-btn-staff");
+  if (otBtn) otBtn.classList.toggle("hidden", mode !== "ot");
+  if (staffBtn) staffBtn.classList.toggle("hidden", mode !== "staff");
+  switchTab(mode);
+}
+
 function fillStaffOptions(selected) {
   return ["<option value=''>-- Select --</option>"]
     .concat(state.staff.filter((s) => (s.staffgroup || "").trim().toLowerCase() === "driver")
       .map((s) => `<option value="${s.staffid}" ${selected === s.staffid ? "selected" : ""}>${s.displayname || s.staffid} (${s.staffid})</option>`)).join("");
+}
+
+function initDatePickers(scopeEl) {
+  if (!window.flatpickr || !scopeEl) return;
+  scopeEl.querySelectorAll("input.js-date-picker").forEach((el) => {
+    if (el._flatpickr) return;
+    flatpickr(el, {
+      dateFormat: "Y-m-d",
+      allowInput: true,
+      clickOpens: !el.disabled,
+      disableMobile: true
+    });
+  });
 }
 
 function renderStaffList() {
@@ -74,9 +102,9 @@ function renderGroups() {
     </div>
     <div class="row ot-group-form">
       <label>Staff<select data-k="staff" ${g.locked ? "disabled" : ""}>${fillStaffOptions(g.staff)}</select></label>
-      <label>Date<input data-k="date" type="date" value="${g.date}" ${g.locked ? "disabled" : ""}></label>
+      <label>Date<input data-k="date" class="js-date-picker" type="text" value="${g.date}" placeholder="YYYY-MM-DD" ${g.locked ? "disabled" : ""}></label>
       <button class="btn-primary" data-action="next" type="button" ${g.locked ? "disabled" : ""}>Next</button>
-      ${g.expanded ? `<label class="remarks-field">Remarks<input data-k="remarks" type="text" value="${g.remarks}" placeholder="optional"></label>` : ""}
+      ${g.expanded ? `<label class="remarks-field">Remarks<input data-k="remarks" type="text" value="${g.remarks}"></label>` : ""}
     </div>
     <div class="msg select-msg">${g.msg || ""}</div>
     <div class="period-area ${g.expanded ? "" : "hidden"}">
@@ -126,13 +154,14 @@ function renderGroups() {
     });
     sec.querySelector("[data-action='add-row']").addEventListener("click", () => { g.rows.push(rowTemplate()); renderGroups(); });
     sec.querySelector("[data-action='confirm']").addEventListener("click", async () => { await confirmInput(g, sec.querySelector('.input-msg')); });
+    initDatePickers(sec);
 
     root.appendChild(sec);
   });
 }
 
 async function loadStaff() { const resp = await fetch(endpoint('/api/staff')); const data = await resp.json(); state.staff = data.staff || []; renderStaffList(); renderGroups(); }
-async function loadExistingRecords(g) { const resp = await fetch(endpoint(`/api/ot/entries?otstaffid=${encodeURIComponent(g.staff)}&date=${encodeURIComponent(g.date)}`)); const data = await resp.json(); g.existing = (data.entries||[]).map((e)=>({id:e.id,type:e.type,startTime:e.startTime,endTime:e.endTime})); }
+async function loadExistingRecords(g) { const resp = await fetch(endpoint(`/api/ot/entries?otstaffid=${encodeURIComponent(g.staff)}&date=${encodeURIComponent(g.date)}`)); const data = await resp.json(); const entries=data.entries||[]; g.existing = entries.map((e)=>({id:e.id,type:e.type,startTime:e.startTime,endTime:e.endTime})); g.remarks = entries.length ? (entries[0].remarks || "") : g.remarks; }
 async function deleteExistingRecord(g,id){ const resp=await fetch(endpoint(`/api/ot/entry?id=${encodeURIComponent(id)}`),{method:'DELETE'}); if(resp.ok){await loadExistingRecords(g); renderGroups();}}
 async function confirmInput(g,msgEl){ msgEl.textContent=''; const p=/^([01]\d|2[0-3]):[0-5]\d$/; for(const r of g.rows){ if(!r.startTime||!r.endTime||!p.test(r.startTime)||!p.test(r.endTime)){msgEl.textContent='Start and End must be HH:MM and cannot be empty.';return;}}
  const all=[...g.existing.map((e)=>({type:e.type,startTime:e.startTime,endTime:e.endTime})),...g.rows.map((r)=>({type:r.type,startTime:r.startTime,endTime:r.endTime}))];
