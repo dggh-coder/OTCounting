@@ -34,6 +34,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/api/calculate", calcHandler)
 	mux.HandleFunc("/api/ot/input", otHandler.Input)
+	mux.HandleFunc("/api/ot/remarks", otHandler.Remarks)
 	mux.HandleFunc("/api/ot/entries", otHandler.Get)
 	mux.HandleFunc("/api/ot/monthly", otHandler.Monthly)
 	mux.HandleFunc("/api/ot/entry", otHandler.DeleteEntry)
