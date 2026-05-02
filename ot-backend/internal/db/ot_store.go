@@ -92,8 +92,8 @@ type DriverMonthlySummary struct {
 	OTStaffID    string  `json:"otstaffid"`
 	DisplayName  string  `json:"displayname"`
 	YYYYMM       string  `json:"yyyymm"`
-	TotalHrs20   float64 `json:"totalhrs20"`
-	TotalHrs15   float64 `json:"totalhrs15"`
+	TotalHrs20   int64   `json:"totalhrs20"`
+	TotalHrs15   int64   `json:"totalhrs15"`
 }
 
 type timeSpan struct {
@@ -311,8 +311,8 @@ func (s *Store) GetDriverMonthlySummary(ctx context.Context, yyyymm string) ([]D
 		SELECT s.staffid,
 		       COALESCE(NULLIF(BTRIM(s.displayname), ''), s.staffid) AS displayname,
 		       $1 AS yyyymm,
-		       COALESCE(SUM(r.totalhrs20), 0)::float8 AS totalhrs20,
-		       COALESCE(SUM(r.totalhrs15), 0)::float8 AS totalhrs15
+		       COALESCE(SUM(r.totalhrs20), 0)::bigint AS totalhrs20,
+		       COALESCE(SUM(r.totalhrs15), 0)::bigint AS totalhrs15
 		FROM ot_staffinfo.staffinfo s
 		LEFT JOIN ot_driverstd.periodresult r
 		  ON BTRIM(r.otstaffid) = BTRIM(s.staffid)

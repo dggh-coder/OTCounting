@@ -75,10 +75,10 @@ function renderDriverSummary(rows, yyyymm) {
     card.className = "summary-card";
     card.innerHTML = `<div class="summary-head"><h3>${r.displayname || r.otstaffid}</h3><span class="summary-id">ID ${r.otstaffid}</span></div>
     <div class="summary-metrics">
-      <div class="metric-pill metric-pill--20"><span class="metric-label">2.0x OT</span><strong>${hrs20.toFixed(1)} hrs</strong></div>
-      <div class="metric-pill metric-pill--15"><span class="metric-label">1.5x OT</span><strong>${hrs15.toFixed(1)} hrs</strong></div>
+      <div class="metric-pill metric-pill--20"><span class="metric-label">2.0x OT</span><strong>${hrs20} hrs</strong></div>
+      <div class="metric-pill metric-pill--15"><span class="metric-label">1.5x OT</span><strong>${hrs15} hrs</strong></div>
     </div>
-    <div class="summary-total">Weighted Total: <strong>${totalWeighted.toFixed(1)} hrs</strong></div>`;
+    <div class="summary-total">Weighted Total: <strong>${totalWeighted} hrs</strong></div>`;
     root.appendChild(card);
   });
 }
