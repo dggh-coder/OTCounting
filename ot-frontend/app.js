@@ -189,15 +189,44 @@ async function saveStaff(){/* unchanged simplified */
 async function deleteStaff(staffid){const msg=document.getElementById('staff-msg'); msg.textContent=''; if(!window.confirm(`Delete staff ${staffid}?`)) return; const resp=await fetch(endpoint(`/api/staff?staffid=${encodeURIComponent(staffid)}`),{method:'DELETE'}); if(!resp.ok){msg.textContent=await resp.text();return;} msg.style.color='#0a7a2f'; msg.textContent=`Staff ${staffid} deleted.`; await loadStaff();}
 
 function bindEvents(){
-  document.querySelectorAll('.tab-btn').forEach((btn)=>btn.addEventListener('click', function(){switchTab(this.getAttribute('data-tab'));}));
+  document.querySelectorAll('.tab-btn').forEach((btn)=>btn.addEventListener('click', async function(){
+    const tab = this.getAttribute('data-tab');
+    switchTab(tab);
+    await reloadActiveSubPage(tab);
+  }));
   document.querySelectorAll('.top-link').forEach((btn)=>btn.addEventListener('click', function(){
     const view = this.getAttribute('data-view');
     const targetTab = this.getAttribute('data-tab-target');
     switchTopView(view);
     if (view === 'driver' && targetTab) switchTab(targetTab);
+    void reloadView(view, targetTab);
   }));
   document.getElementById('save-staff')?.addEventListener('click',saveStaff);
   document.getElementById('add-group')?.addEventListener('click',()=>{state.groups.push(createGroup()); renderGroups();});
 }
+
+async function reloadActiveSubPage(tabName) {
+  if (tabName === 'ot') {
+    state.groups = [createGroup()];
+    renderGroups();
+    return;
+  }
+  if (tabName === 'staff') {
+    await loadStaff();
+  }
+}
+
+async function reloadView(view, targetTab) {
+  if (view === 'driver') {
+    const activeTab = targetTab || (document.querySelector('.tab-btn.active')?.getAttribute('data-tab')) || 'ot';
+    await reloadActiveSubPage(activeTab);
+    return;
+  }
+  if (view === 'staffmgmt') {
+    switchTab('staff');
+    await reloadActiveSubPage('staff');
+  }
+}
+
 function init(){ state.groups=[createGroup()]; bindEvents(); loadStaff(); switchTab('ot'); switchTopView('home'); startClock(); }
 document.addEventListener('DOMContentLoaded', init);
