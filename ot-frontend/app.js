@@ -35,7 +35,7 @@ function startClock(){
   setInterval(tick,1000);
 }
 function switchTab(tabName) {
-  ["ot", "staff"].forEach((n) => {
+  ["summary", "ot", "staff"].forEach((n) => {
     const section = document.getElementById(`tab-${n}`);
     const button = document.getElementById(`tab-btn-${n}`);
     if (section) section.classList.toggle("hidden", n !== tabName);
@@ -44,13 +44,66 @@ function switchTab(tabName) {
 }
 
 function setDriverMode(mode) {
+  const summaryBtn = document.getElementById("tab-btn-summary");
   const otBtn = document.getElementById("tab-btn-ot");
   const staffBtn = document.getElementById("tab-btn-staff");
+  if (summaryBtn) summaryBtn.classList.toggle("hidden", mode !== "ot");
   if (otBtn) otBtn.classList.toggle("hidden", mode !== "ot");
   if (staffBtn) staffBtn.classList.toggle("hidden", mode !== "staff");
-  switchTab(mode);
+  switchTab(mode === "ot" ? "summary" : mode);
 }
 
+
+
+function currentYYYYMM() {
+  const now = new Date();
+  return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function previousYYYYMM(yyyymm) {
+  const y = Number(yyyymm.slice(0, 4));
+  const m = Number(yyyymm.slice(4, 6));
+  const d = new Date(y, m - 2, 1);
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function renderDriverSummary(rows, yyyymm, rootId, labelId, cardClassName = "") {
+  const label = document.getElementById(labelId);
+  if (label) label.textContent = `Summary Month · ${yyyymm}`;
+  const root = document.getElementById(rootId);
+  if (!root) return;
+  root.innerHTML = "";
+  if (!rows.length) { root.innerHTML = "<p class='summary-empty'>No driver data found for this month.</p>"; return; }
+  rows.forEach((r) => {
+    const hrs20 = Number(r.totalhrs20 || 0);
+    const hrs15 = Number(r.totalhrs15 || 0);
+    const totalWeighted = hrs20 * 2 + hrs15 * 1.5;
+    const card = document.createElement("article");
+    card.className = `summary-card ${cardClassName}`.trim();
+    card.innerHTML = `<div class="summary-head"><h3 class="summary-name">${r.displayname || r.otstaffid}</h3><span class="summary-id">ID ${r.otstaffid}</span></div>
+    <div class="summary-metrics">
+      <div class="metric-pill metric-pill--20"><span class="metric-label">2.0x OT</span><strong><span class="metric-value">${hrs20}</span> hrs</strong></div>
+      <div class="metric-pill metric-pill--15"><span class="metric-label">1.5x OT</span><strong><span class="metric-value">${hrs15}</span> hrs</strong></div>
+    </div>
+    <div class="summary-total">Weighted Total: <strong>${totalWeighted} hrs</strong></div>`;
+    root.appendChild(card);
+  });
+}
+
+async function loadDriverSummary() {
+  const yyyymm = currentYYYYMM();
+  const prev = previousYYYYMM(yyyymm);
+  const [respCurrent, respPrev] = await Promise.all([
+    fetch(endpoint(`/api/ot/driver-monthly-summary?yyyymm=${encodeURIComponent(yyyymm)}`), { cache: 'no-store' }),
+    fetch(endpoint(`/api/ot/driver-monthly-summary?yyyymm=${encodeURIComponent(prev)}`), { cache: 'no-store' })
+  ]);
+  if (!respCurrent.ok) throw new Error(await respCurrent.text());
+  if (!respPrev.ok) throw new Error(await respPrev.text());
+  const dataCurrent = await respCurrent.json();
+  const dataPrev = await respPrev.json();
+  renderDriverSummary(dataCurrent.rows || [], yyyymm, 'driver-summary-grid', 'summary-month-label');
+  renderDriverSummary(dataPrev.rows || [], prev, 'driver-summary-grid-prev', 'summary-prev-month-label', 'summary-card--prev');
+}
 function fillStaffOptions(selected) {
   return ["<option value=''>-- Select --</option>"]
     .concat(state.staff.filter((s) => (s.staffgroup || "").trim().toLowerCase() === "driver")
@@ -173,7 +226,7 @@ function renderGroups() {
   });
 }
 
-async function loadStaff() { const resp = await fetch(endpoint('/api/staff')); const data = await resp.json(); state.staff = data.staff || []; renderStaffList(); renderGroups(); }
+async function loadStaff() { const resp = await fetch(endpoint('/api/staff'), { cache: 'no-store' }); const data = await resp.json(); state.staff = data.staff || []; renderStaffList(); renderGroups(); }
 async function loadExistingRecords(g) { const resp = await fetch(endpoint(`/api/ot/entries?otstaffid=${encodeURIComponent(g.staff)}&date=${encodeURIComponent(g.date)}`)); if(!resp.ok){throw new Error(await resp.text());} const data = await resp.json(); const entries=data.entries||[]; g.existing = entries.map((e)=>({id:e.id,type:e.type,startTime:e.startTime,endTime:e.endTime})); g.hasPeriodRecord = !!data.exists; g.remarks = typeof data.remarks === "string" ? data.remarks : (entries.length ? (entries[0].remarks || "") : g.remarks); g.remarksReadonly = g.hasPeriodRecord; }
 async function saveRemarksOnly(g){ const resp = await fetch(endpoint('/api/ot/remarks'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({otstaffid:g.staff,date:g.date,remarks:g.remarks})}); if(!resp.ok){throw new Error(await resp.text());} }
 async function deleteExistingRecord(g,id){ const resp=await fetch(endpoint(`/api/ot/entry?id=${encodeURIComponent(id)}`),{method:'DELETE'}); if(resp.ok){await loadExistingRecords(g); renderGroups();}}
@@ -188,16 +241,59 @@ async function saveStaff(){/* unchanged simplified */
 }
 async function deleteStaff(staffid){const msg=document.getElementById('staff-msg'); msg.textContent=''; if(!window.confirm(`Delete staff ${staffid}?`)) return; const resp=await fetch(endpoint(`/api/staff?staffid=${encodeURIComponent(staffid)}`),{method:'DELETE'}); if(!resp.ok){msg.textContent=await resp.text();return;} msg.style.color='#0a7a2f'; msg.textContent=`Staff ${staffid} deleted.`; await loadStaff();}
 
+function resetStaffInputForm() {
+  ['staff-id','staff-nameeng','staff-namechi','staff-displayname','staff-domainname','staff-staffgroup']
+    .forEach((id) => {
+      const input = document.getElementById(id);
+      if (input) input.value = '';
+    });
+}
+
 function bindEvents(){
-  document.querySelectorAll('.tab-btn').forEach((btn)=>btn.addEventListener('click', function(){switchTab(this.getAttribute('data-tab'));}));
+  document.querySelectorAll('.tab-btn').forEach((btn)=>btn.addEventListener('click', async function(){
+    const tab = this.getAttribute('data-tab');
+    switchTab(tab);
+    await reloadActiveSubPage(tab);
+  }));
   document.querySelectorAll('.top-link').forEach((btn)=>btn.addEventListener('click', function(){
     const view = this.getAttribute('data-view');
     const targetTab = this.getAttribute('data-tab-target');
     switchTopView(view);
     if (view === 'driver' && targetTab) switchTab(targetTab);
+    void reloadView(view, targetTab);
   }));
   document.getElementById('save-staff')?.addEventListener('click',saveStaff);
   document.getElementById('add-group')?.addEventListener('click',()=>{state.groups.push(createGroup()); renderGroups();});
 }
+
+async function reloadActiveSubPage(tabName) {
+  if (tabName === 'summary') {
+    await loadDriverSummary();
+    return;
+  }
+  if (tabName === 'ot') {
+    state.groups = [createGroup()];
+    renderGroups();
+    return;
+  }
+  if (tabName === 'staff') {
+    resetStaffInputForm();
+    document.getElementById('staff-msg').textContent = '';
+    await loadStaff();
+  }
+}
+
+async function reloadView(view, targetTab) {
+  if (view === 'driver') {
+    const activeTab = targetTab || (document.querySelector('.tab-btn.active')?.getAttribute('data-tab')) || 'ot';
+    await reloadActiveSubPage(activeTab);
+    return;
+  }
+  if (view === 'staffmgmt') {
+    switchTab('staff');
+    await reloadActiveSubPage('staff');
+  }
+}
+
 function init(){ state.groups=[createGroup()]; bindEvents(); loadStaff(); switchTab('ot'); switchTopView('home'); startClock(); }
 document.addEventListener('DOMContentLoaded', init);
