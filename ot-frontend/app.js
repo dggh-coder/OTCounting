@@ -188,6 +188,14 @@ async function saveStaff(){/* unchanged simplified */
 }
 async function deleteStaff(staffid){const msg=document.getElementById('staff-msg'); msg.textContent=''; if(!window.confirm(`Delete staff ${staffid}?`)) return; const resp=await fetch(endpoint(`/api/staff?staffid=${encodeURIComponent(staffid)}`),{method:'DELETE'}); if(!resp.ok){msg.textContent=await resp.text();return;} msg.style.color='#0a7a2f'; msg.textContent=`Staff ${staffid} deleted.`; await loadStaff();}
 
+function resetStaffInputForm() {
+  ['staff-id','staff-nameeng','staff-namechi','staff-displayname','staff-domainname','staff-staffgroup']
+    .forEach((id) => {
+      const input = document.getElementById(id);
+      if (input) input.value = '';
+    });
+}
+
 function bindEvents(){
   document.querySelectorAll('.tab-btn').forEach((btn)=>btn.addEventListener('click', async function(){
     const tab = this.getAttribute('data-tab');
@@ -212,6 +220,7 @@ async function reloadActiveSubPage(tabName) {
     return;
   }
   if (tabName === 'staff') {
+    resetStaffInputForm();
     document.getElementById('staff-msg').textContent = '';
     await loadStaff();
   }
