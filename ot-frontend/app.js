@@ -101,6 +101,20 @@ async function loadMonthlyReport() {
   const totalRow = `<tr class="report-total-row"><td colspan="3">${staffName} ${yyyymm}; 2.0 Total: ${summaryRow.totalhrs20}, 1.5 Total: ${summaryRow.totalhrs15}</td></tr>`;
   body.innerHTML = `${detailRows}${totalRow}`;
 }
+
+function exportMonthlyReport() {
+  const staffSel = document.getElementById('report-staff');
+  const staffID = staffSel?.value || '';
+  const month = document.getElementById('report-month')?.value || '';
+  if (!staffID || !month) {
+    document.getElementById('report-msg').textContent = 'Please select staff and month before export.';
+    return;
+  }
+  const yyyymm = month.replace('-', '');
+  const staffName = staffSel?.selectedOptions?.[0]?.textContent?.split(' (')[0] || staffID;
+  const url = endpoint(`/api/ot/driver-monthly-report/export?otstaffid=${encodeURIComponent(staffID)}&yyyymm=${encodeURIComponent(yyyymm)}&staffname=${encodeURIComponent(staffName)}`);
+  window.open(url, '_blank');
+}
 function currentYYYYMM() {
   const now = new Date();
   return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -310,6 +324,7 @@ function bindEvents(){
   }));
   document.querySelectorAll('[data-report-tab]').forEach((btn)=>btn.addEventListener('click', function(){ switchReportTab(this.getAttribute('data-report-tab')); }));
   document.getElementById('report-search')?.addEventListener('click',loadMonthlyReport);
+  document.getElementById('report-export')?.addEventListener('click', exportMonthlyReport);
   document.getElementById('save-staff')?.addEventListener('click',saveStaff);
   document.getElementById('add-group')?.addEventListener('click',()=>{state.groups.push(createGroup()); renderGroups();});
 }

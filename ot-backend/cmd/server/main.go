@@ -41,6 +41,7 @@ func main() {
 	mux.HandleFunc("/api/ot/process-texts", otHandler.ProcessTexts)
 	mux.HandleFunc("/api/ot/driver-monthly-summary", otHandler.DriverMonthlySummary)
 	mux.HandleFunc("/api/ot/driver-monthly-report", otHandler.DriverMonthlyReport)
+	mux.HandleFunc("/api/ot/driver-monthly-report/export", otHandler.DriverMonthlyReportExport)
 	mux.HandleFunc("/api/staff", otHandler.Staff)
 	mux.HandleFunc("/api/staff/input", otHandler.StaffInput)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
