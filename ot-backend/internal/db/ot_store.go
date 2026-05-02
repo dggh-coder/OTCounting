@@ -100,6 +100,7 @@ type DriverMonthlyReportRow struct {
 	Date      string `json:"date"`
 	StartTime string `json:"startTime"`
 	EndTime   string `json:"endTime"`
+	Remarks   string `json:"remarks"`
 }
 
 type timeSpan struct {
@@ -346,6 +347,7 @@ func (s *Store) GetDriverMonthlySummary(ctx context.Context, yyyymm string) ([]D
 func (s *Store) GetDriverMonthlyReportRows(ctx context.Context, staffID, yyyymm string) ([]DriverMonthlyReportRow, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT TO_CHAR(p.date, 'YYYY-MM-DD') AS date_label,
+		       COALESCE(p.remarks, '') AS remarks,
 		       d.starttime::text AS start_time,
 		       d.endtime::text AS end_time
 		FROM ot_driverstd.otperiod p
@@ -361,7 +363,7 @@ func (s *Store) GetDriverMonthlyReportRows(ctx context.Context, staffID, yyyymm 
 	out := []DriverMonthlyReportRow{}
 	for rows.Next() {
 		var r DriverMonthlyReportRow
-		if err := rows.Scan(&r.Date, &r.StartTime, &r.EndTime); err != nil {
+		if err := rows.Scan(&r.Date, &r.Remarks, &r.StartTime, &r.EndTime); err != nil {
 			return nil, err
 		}
 		out = append(out, r)

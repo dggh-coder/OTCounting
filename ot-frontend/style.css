@@ -166,6 +166,7 @@ th,td{border:1px solid #ddd;padding:.5rem}
 
 .report-context{color:#cc2d2d;font-weight:800;margin:.35rem 0 .55rem}
 .report-total-row td{font-weight:800;background:#f7faff}
+.report-remark-row td{background:#fff9f1;color:#8a4f1b;font-weight:700}
 .report-context-row{display:flex;align-items:center;justify-content:space-between;gap:.8rem}
 .report-export-actions{display:flex;gap:.55rem}
 .btn-export{background:#1f9d57;color:#fff;border:none;font-weight:800;padding:.52rem 1rem;border-radius:10px;box-shadow:0 8px 16px rgba(31,157,87,.28)}

@@ -97,9 +97,18 @@ async function loadMonthlyReport() {
   const summaryData = await summaryResp.json();
   const summaryRow = (summaryData.rows || []).find((r) => String(r.otstaffid) === String(staffID)) || { totalhrs20: 0, totalhrs15: 0 };
   const rows = data.rows || [];
-  const detailRows = rows.length ? rows.map((r)=>`<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td></tr>`).join('') : '<tr><td colspan="3">No data</td></tr>';
-  const totalRow = `<tr class="report-total-row"><td colspan="3">${staffName} ${yyyymm}; 2.0 Total: ${summaryRow.totalhrs20}, 1.5 Total: ${summaryRow.totalhrs15}</td></tr>`;
-  body.innerHTML = `${detailRows}${totalRow}`;
+  let detailRows = '';
+  let lastDate = '';
+  rows.forEach((r) => {
+    if (r.date !== lastDate) {
+      detailRows += `<tr class="report-remark-row"><td colspan="3">${r.date} Justification: ${r.remarks || '-'}</td></tr>`;
+      lastDate = r.date;
+    }
+    detailRows += `<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td></tr>`;
+  });
+  if (!detailRows) detailRows = '<tr><td colspan="3">No data</td></tr>';
+  const totalRows = `<tr class="report-total-row"><td colspan="3">2.0 Total: ${summaryRow.totalhrs20} hrs</td></tr><tr class="report-total-row"><td colspan="3">1.5 Total: ${summaryRow.totalhrs15} hrs</td></tr>`;
+  body.innerHTML = `${detailRows}${totalRows}`;
 }
 
 function exportMonthlyReport(kind = 'csv') {

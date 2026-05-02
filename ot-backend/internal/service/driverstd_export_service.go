@@ -17,12 +17,22 @@ func BuildDriverMonthlyReportCSV(staffName, yyyymm string, rows []db.DriverMonth
 	if err := w.Write([]string{"Date", "Start Time", "End Time"}); err != nil {
 		return nil, err
 	}
+	lastDate := ""
 	for _, r := range rows {
+		if r.Date != lastDate {
+			if err := w.Write([]string{fmt.Sprintf("%s Justification: %s", r.Date, r.Remarks)}); err != nil {
+				return nil, err
+			}
+			lastDate = r.Date
+		}
 		if err := w.Write([]string{r.Date, r.StartTime, r.EndTime}); err != nil {
 			return nil, err
 		}
 	}
-	if err := w.Write([]string{fmt.Sprintf("%s %s; 2.0 Total: %d, 1.5 Total: %d", staffName, yyyymm, total20, total15)}); err != nil {
+	if err := w.Write([]string{fmt.Sprintf("2.0 Total: %d hrs", total20)}); err != nil {
+		return nil, err
+	}
+	if err := w.Write([]string{fmt.Sprintf("1.5 Total: %d hrs", total15)}); err != nil {
 		return nil, err
 	}
 	w.Flush()

@@ -34,11 +34,19 @@ func BuildDriverMonthlyReportXLSX(staffName, yyyymm string, rows []db.DriverMont
 		headerRowXML(2, esc("Date"), esc("Start Time"), esc("End Time")),
 	}
 	rowNo := 3
+	lastDate := ""
 	for _, r := range rows {
+		if r.Date != lastDate {
+			sheetRows = append(sheetRows, rowXML(rowNo, esc(fmt.Sprintf("%s Justification: %s", r.Date, r.Remarks))))
+			rowNo++
+			lastDate = r.Date
+		}
 		sheetRows = append(sheetRows, dataRowXML(rowNo, esc(r.Date), esc(r.StartTime), esc(r.EndTime)))
 		rowNo++
 	}
-	sheetRows = append(sheetRows, rowXML(rowNo, esc(fmt.Sprintf("%s %s; 2.0 Total: %d, 1.5 Total: %d", staffName, yyyymm, total20, total15))))
+	sheetRows = append(sheetRows, rowXML(rowNo, esc(fmt.Sprintf("2.0 Total: %d hrs", total20))))
+	rowNo++
+	sheetRows = append(sheetRows, rowXML(rowNo, esc(fmt.Sprintf("1.5 Total: %d hrs", total15))))
 
 	sheetXML := `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
