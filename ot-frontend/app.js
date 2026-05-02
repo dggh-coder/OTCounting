@@ -35,7 +35,7 @@ function startClock(){
   setInterval(tick,1000);
 }
 function switchTab(tabName) {
-  ["summary", "ot", "staff"].forEach((n) => {
+  ["summary", "ot", "report", "staff"].forEach((n) => {
     const section = document.getElementById(`tab-${n}`);
     const button = document.getElementById(`tab-btn-${n}`);
     if (section) section.classList.toggle("hidden", n !== tabName);
@@ -46,15 +46,49 @@ function switchTab(tabName) {
 function setDriverMode(mode) {
   const summaryBtn = document.getElementById("tab-btn-summary");
   const otBtn = document.getElementById("tab-btn-ot");
+  const reportBtn = document.getElementById("tab-btn-report");
   const staffBtn = document.getElementById("tab-btn-staff");
   if (summaryBtn) summaryBtn.classList.toggle("hidden", mode !== "ot");
   if (otBtn) otBtn.classList.toggle("hidden", mode !== "ot");
+  if (reportBtn) reportBtn.classList.toggle("hidden", mode !== "ot");
   if (staffBtn) staffBtn.classList.toggle("hidden", mode !== "staff");
   switchTab(mode === "ot" ? "summary" : mode);
 }
 
 
 
+
+function switchReportTab(tabName) {
+  ["monthly", "audit"].forEach((n) => {
+    document.getElementById(`report-tab-${n}`)?.classList.toggle("hidden", n !== tabName);
+    document.getElementById(`report-tab-btn-${n}`)?.classList.toggle("active", n === tabName);
+  });
+}
+
+function fillReportStaffOptions() {
+  const sel = document.getElementById('report-staff');
+  if (!sel) return;
+  const options = state.staff
+    .filter((s) => (s.staffgroup || '').trim().toLowerCase() === 'driver')
+    .sort((a,b)=> (a.displayname||a.staffid).localeCompare(b.displayname||b.staffid))
+    .map((s)=>`<option value="${s.staffid}">${s.displayname || s.staffid} (${s.staffid})</option>`);
+  sel.innerHTML = options.length ? options.join('') : '<option value="">No driver</option>';
+}
+
+async function loadMonthlyReport() {
+  const msg = document.getElementById('report-msg');
+  const body = document.getElementById('report-body');
+  const staffID = document.getElementById('report-staff')?.value || '';
+  const month = document.getElementById('report-month')?.value || '';
+  if (!staffID || !month) { msg.textContent = 'Please select staff and month.'; return; }
+  msg.textContent = '';
+  const yyyymm = month.replace('-', '');
+  const resp = await fetch(endpoint(`/api/ot/driver-monthly-report?otstaffid=${encodeURIComponent(staffID)}&yyyymm=${encodeURIComponent(yyyymm)}`), { cache: 'no-store' });
+  if (!resp.ok) { msg.textContent = await resp.text(); return; }
+  const data = await resp.json();
+  const rows = data.rows || [];
+  body.innerHTML = rows.length ? rows.map((r)=>`<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td></tr>`).join('') : '<tr><td colspan="3">No data</td></tr>';
+}
 function currentYYYYMM() {
   const now = new Date();
   return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -262,6 +296,8 @@ function bindEvents(){
     if (view === 'driver' && targetTab) switchTab(targetTab);
     void reloadView(view, targetTab);
   }));
+  document.querySelectorAll('[data-report-tab]').forEach((btn)=>btn.addEventListener('click', function(){ switchReportTab(this.getAttribute('data-report-tab')); }));
+  document.getElementById('report-search')?.addEventListener('click',loadMonthlyReport);
   document.getElementById('save-staff')?.addEventListener('click',saveStaff);
   document.getElementById('add-group')?.addEventListener('click',()=>{state.groups.push(createGroup()); renderGroups();});
 }
@@ -269,6 +305,13 @@ function bindEvents(){
 async function reloadActiveSubPage(tabName) {
   if (tabName === 'summary') {
     await loadDriverSummary();
+    return;
+  }
+  if (tabName === 'report') {
+    fillReportStaffOptions();
+    switchReportTab('monthly');
+    const monthEl = document.getElementById('report-month');
+    if (monthEl && !monthEl.value) monthEl.value = `${currentYYYYMM().slice(0,4)}-${currentYYYYMM().slice(4,6)}`;
     return;
   }
   if (tabName === 'ot') {
