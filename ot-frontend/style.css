@@ -138,3 +138,8 @@ th,td{border:1px solid #ddd;padding:.5rem}
 .staff-table th{background:#eef3ff;font-weight:700}
 .staff-table tbody tr:nth-child(even){background:#f8fbff}
 .staff-table td:last-child,.staff-table th:last-child{text-align:center;width:110px}
+
+.summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.9rem}
+.summary-card{border:1px solid #d5dff1;border-radius:12px;background:#f8fbff;padding:.9rem;color:#172038}
+.summary-card h3{margin:.1rem 0 .45rem;font-size:1.05rem}
+.summary-stat{font-weight:700}

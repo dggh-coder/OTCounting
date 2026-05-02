@@ -88,6 +88,14 @@ type ProcessTextRow struct {
 	Process15Txt string `json:"process15txt"`
 }
 
+type DriverMonthlySummary struct {
+	OTStaffID    string  `json:"otstaffid"`
+	DisplayName  string  `json:"displayname"`
+	YYYYMM       string  `json:"yyyymm"`
+	TotalHrs20   float64 `json:"totalhrs20"`
+	TotalHrs15   float64 `json:"totalhrs15"`
+}
+
 type timeSpan struct {
 	start time.Time
 	end   time.Time
@@ -288,6 +296,40 @@ func (s *Store) GetProcessTexts(ctx context.Context, otstaffid string) ([]Proces
 	for rows.Next() {
 		var r ProcessTextRow
 		if err := rows.Scan(&r.OTStaffID, &r.DateLabel, &r.Process20Txt, &r.Process15Txt); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
+func (s *Store) GetDriverMonthlySummary(ctx context.Context, yyyymm string) ([]DriverMonthlySummary, error) {
+	if strings.TrimSpace(yyyymm) == "" {
+		yyyymm = time.Now().Format("200601")
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT s.staffid,
+		       COALESCE(NULLIF(BTRIM(s.displayname), ''), s.staffid) AS displayname,
+		       $1 AS yyyymm,
+		       COALESCE(SUM(r.totalhrs20), 0)::float8 AS totalhrs20,
+		       COALESCE(SUM(r.totalhrs15), 0)::float8 AS totalhrs15
+		FROM ot_staffinfo.staffinfo s
+		LEFT JOIN ot_driverstd.periodresult r
+		  ON BTRIM(r.otstaffid) = BTRIM(s.staffid)
+		 AND TO_CHAR(r.date_label, 'YYYYMM') = $1
+		WHERE LOWER(BTRIM(s.staffgroup)) = 'driver'
+		GROUP BY s.staffid, displayname
+		ORDER BY LOWER(displayname), s.staffid
+	`, yyyymm)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := []DriverMonthlySummary{}
+	for rows.Next() {
+		var r DriverMonthlySummary
+		if err := rows.Scan(&r.OTStaffID, &r.DisplayName, &r.YYYYMM, &r.TotalHrs20, &r.TotalHrs15); err != nil {
 			return nil, err
 		}
 		out = append(out, r)

@@ -35,7 +35,7 @@ function startClock(){
   setInterval(tick,1000);
 }
 function switchTab(tabName) {
-  ["ot", "staff"].forEach((n) => {
+  ["summary", "ot", "staff"].forEach((n) => {
     const section = document.getElementById(`tab-${n}`);
     const button = document.getElementById(`tab-btn-${n}`);
     if (section) section.classList.toggle("hidden", n !== tabName);
@@ -44,13 +44,44 @@ function switchTab(tabName) {
 }
 
 function setDriverMode(mode) {
+  const summaryBtn = document.getElementById("tab-btn-summary");
   const otBtn = document.getElementById("tab-btn-ot");
   const staffBtn = document.getElementById("tab-btn-staff");
+  if (summaryBtn) summaryBtn.classList.toggle("hidden", mode !== "ot");
   if (otBtn) otBtn.classList.toggle("hidden", mode !== "ot");
   if (staffBtn) staffBtn.classList.toggle("hidden", mode !== "staff");
-  switchTab(mode);
+  switchTab(mode === "ot" ? "summary" : mode);
 }
 
+
+
+function currentYYYYMM() {
+  const now = new Date();
+  return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function renderDriverSummary(rows, yyyymm) {
+  const label = document.getElementById("summary-month-label");
+  if (label) label.textContent = `Month: ${yyyymm}`;
+  const root = document.getElementById("driver-summary-grid");
+  if (!root) return;
+  root.innerHTML = "";
+  if (!rows.length) { root.innerHTML = "<p>No driver data found.</p>"; return; }
+  rows.forEach((r) => {
+    const card = document.createElement("article");
+    card.className = "summary-card";
+    card.innerHTML = `<h3>${r.displayname || r.otstaffid} (${r.otstaffid})</h3><div class="summary-stat">2.0x totalhrs20: ${Number(r.totalhrs20 || 0).toFixed(1)}</div><div class="summary-stat">1.5x totalhrs15: ${Number(r.totalhrs15 || 0).toFixed(1)}</div>`;
+    root.appendChild(card);
+  });
+}
+
+async function loadDriverSummary() {
+  const yyyymm = currentYYYYMM();
+  const resp = await fetch(endpoint(`/api/ot/driver-monthly-summary?yyyymm=${encodeURIComponent(yyyymm)}`), { cache: 'no-store' });
+  if (!resp.ok) throw new Error(await resp.text());
+  const data = await resp.json();
+  renderDriverSummary(data.rows || [], yyyymm);
+}
 function fillStaffOptions(selected) {
   return ["<option value=''>-- Select --</option>"]
     .concat(state.staff.filter((s) => (s.staffgroup || "").trim().toLowerCase() === "driver")
@@ -173,7 +204,7 @@ function renderGroups() {
   });
 }
 
-async function loadStaff() { const resp = await fetch(endpoint('/api/staff')); const data = await resp.json(); state.staff = data.staff || []; renderStaffList(); renderGroups(); }
+async function loadStaff() { const resp = await fetch(endpoint('/api/staff'), { cache: 'no-store' }); const data = await resp.json(); state.staff = data.staff || []; renderStaffList(); renderGroups(); }
 async function loadExistingRecords(g) { const resp = await fetch(endpoint(`/api/ot/entries?otstaffid=${encodeURIComponent(g.staff)}&date=${encodeURIComponent(g.date)}`)); if(!resp.ok){throw new Error(await resp.text());} const data = await resp.json(); const entries=data.entries||[]; g.existing = entries.map((e)=>({id:e.id,type:e.type,startTime:e.startTime,endTime:e.endTime})); g.hasPeriodRecord = !!data.exists; g.remarks = typeof data.remarks === "string" ? data.remarks : (entries.length ? (entries[0].remarks || "") : g.remarks); g.remarksReadonly = g.hasPeriodRecord; }
 async function saveRemarksOnly(g){ const resp = await fetch(endpoint('/api/ot/remarks'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({otstaffid:g.staff,date:g.date,remarks:g.remarks})}); if(!resp.ok){throw new Error(await resp.text());} }
 async function deleteExistingRecord(g,id){ const resp=await fetch(endpoint(`/api/ot/entry?id=${encodeURIComponent(id)}`),{method:'DELETE'}); if(resp.ok){await loadExistingRecords(g); renderGroups();}}
@@ -188,16 +219,59 @@ async function saveStaff(){/* unchanged simplified */
 }
 async function deleteStaff(staffid){const msg=document.getElementById('staff-msg'); msg.textContent=''; if(!window.confirm(`Delete staff ${staffid}?`)) return; const resp=await fetch(endpoint(`/api/staff?staffid=${encodeURIComponent(staffid)}`),{method:'DELETE'}); if(!resp.ok){msg.textContent=await resp.text();return;} msg.style.color='#0a7a2f'; msg.textContent=`Staff ${staffid} deleted.`; await loadStaff();}
 
+function resetStaffInputForm() {
+  ['staff-id','staff-nameeng','staff-namechi','staff-displayname','staff-domainname','staff-staffgroup']
+    .forEach((id) => {
+      const input = document.getElementById(id);
+      if (input) input.value = '';
+    });
+}
+
 function bindEvents(){
-  document.querySelectorAll('.tab-btn').forEach((btn)=>btn.addEventListener('click', function(){switchTab(this.getAttribute('data-tab'));}));
+  document.querySelectorAll('.tab-btn').forEach((btn)=>btn.addEventListener('click', async function(){
+    const tab = this.getAttribute('data-tab');
+    switchTab(tab);
+    await reloadActiveSubPage(tab);
+  }));
   document.querySelectorAll('.top-link').forEach((btn)=>btn.addEventListener('click', function(){
     const view = this.getAttribute('data-view');
     const targetTab = this.getAttribute('data-tab-target');
     switchTopView(view);
     if (view === 'driver' && targetTab) switchTab(targetTab);
+    void reloadView(view, targetTab);
   }));
   document.getElementById('save-staff')?.addEventListener('click',saveStaff);
   document.getElementById('add-group')?.addEventListener('click',()=>{state.groups.push(createGroup()); renderGroups();});
 }
+
+async function reloadActiveSubPage(tabName) {
+  if (tabName === 'summary') {
+    await loadDriverSummary();
+    return;
+  }
+  if (tabName === 'ot') {
+    state.groups = [createGroup()];
+    renderGroups();
+    return;
+  }
+  if (tabName === 'staff') {
+    resetStaffInputForm();
+    document.getElementById('staff-msg').textContent = '';
+    await loadStaff();
+  }
+}
+
+async function reloadView(view, targetTab) {
+  if (view === 'driver') {
+    const activeTab = targetTab || (document.querySelector('.tab-btn.active')?.getAttribute('data-tab')) || 'ot';
+    await reloadActiveSubPage(activeTab);
+    return;
+  }
+  if (view === 'staffmgmt') {
+    switchTab('staff');
+    await reloadActiveSubPage('staff');
+  }
+}
+
 function init(){ state.groups=[createGroup()]; bindEvents(); loadStaff(); switchTab('ot'); switchTopView('home'); startClock(); }
 document.addEventListener('DOMContentLoaded', init);

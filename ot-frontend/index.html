@@ -30,9 +30,18 @@
     <section id="view-driver" class="page-view hidden">
       <h1>Driver OT Management</h1>
       <nav class="tabs">
+        <button id="tab-btn-summary" class="tab-btn" data-tab="summary" type="button">Summary</button>
         <button id="tab-btn-ot" class="tab-btn active" data-tab="ot" type="button">OT Input</button>
         <button id="tab-btn-staff" class="tab-btn" data-tab="staff" type="button">Staff Input</button>
       </nav>
+
+      <section id="tab-summary" class="tab-content hidden">
+        <section class="card">
+          <h2>Driver Monthly Summary</h2>
+          <p class="hint" id="summary-month-label"></p>
+          <div id="driver-summary-grid" class="summary-grid"></div>
+        </section>
+      </section>
 
       <section id="tab-ot" class="tab-content">
         <section class="card">
