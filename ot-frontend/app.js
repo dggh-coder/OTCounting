@@ -60,10 +60,17 @@ function currentYYYYMM() {
   return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
-function renderDriverSummary(rows, yyyymm) {
-  const label = document.getElementById("summary-month-label");
+function previousYYYYMM(yyyymm) {
+  const y = Number(yyyymm.slice(0, 4));
+  const m = Number(yyyymm.slice(4, 6));
+  const d = new Date(y, m - 2, 1);
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function renderDriverSummary(rows, yyyymm, rootId, labelId, cardClassName = "") {
+  const label = document.getElementById(labelId);
   if (label) label.textContent = `Summary Month · ${yyyymm}`;
-  const root = document.getElementById("driver-summary-grid");
+  const root = document.getElementById(rootId);
   if (!root) return;
   root.innerHTML = "";
   if (!rows.length) { root.innerHTML = "<p class='summary-empty'>No driver data found for this month.</p>"; return; }
@@ -72,7 +79,7 @@ function renderDriverSummary(rows, yyyymm) {
     const hrs15 = Number(r.totalhrs15 || 0);
     const totalWeighted = hrs20 * 2 + hrs15 * 1.5;
     const card = document.createElement("article");
-    card.className = "summary-card";
+    card.className = `summary-card ${cardClassName}`.trim();
     card.innerHTML = `<div class="summary-head"><h3 class="summary-name">${r.displayname || r.otstaffid}</h3><span class="summary-id">ID ${r.otstaffid}</span></div>
     <div class="summary-metrics">
       <div class="metric-pill metric-pill--20"><span class="metric-label">2.0x OT</span><strong><span class="metric-value">${hrs20}</span> hrs</strong></div>
@@ -85,10 +92,17 @@ function renderDriverSummary(rows, yyyymm) {
 
 async function loadDriverSummary() {
   const yyyymm = currentYYYYMM();
-  const resp = await fetch(endpoint(`/api/ot/driver-monthly-summary?yyyymm=${encodeURIComponent(yyyymm)}`), { cache: 'no-store' });
-  if (!resp.ok) throw new Error(await resp.text());
-  const data = await resp.json();
-  renderDriverSummary(data.rows || [], yyyymm);
+  const prev = previousYYYYMM(yyyymm);
+  const [respCurrent, respPrev] = await Promise.all([
+    fetch(endpoint(`/api/ot/driver-monthly-summary?yyyymm=${encodeURIComponent(yyyymm)}`), { cache: 'no-store' }),
+    fetch(endpoint(`/api/ot/driver-monthly-summary?yyyymm=${encodeURIComponent(prev)}`), { cache: 'no-store' })
+  ]);
+  if (!respCurrent.ok) throw new Error(await respCurrent.text());
+  if (!respPrev.ok) throw new Error(await respPrev.text());
+  const dataCurrent = await respCurrent.json();
+  const dataPrev = await respPrev.json();
+  renderDriverSummary(dataCurrent.rows || [], yyyymm, 'driver-summary-grid', 'summary-month-label');
+  renderDriverSummary(dataPrev.rows || [], prev, 'driver-summary-grid-prev', 'summary-prev-month-label', 'summary-card--prev');
 }
 function fillStaffOptions(selected) {
   return ["<option value=''>-- Select --</option>"]

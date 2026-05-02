@@ -140,6 +140,7 @@ th,td{border:1px solid #ddd;padding:.5rem}
 .staff-table td:last-child,.staff-table th:last-child{text-align:center;width:110px}
 
 .summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.summary-divider{border:none;border-top:2px dashed #c2d3f4;margin:1.15rem 0 .95rem}
 .summary-card{position:relative;border:1px solid rgba(116,154,224,.55);border-radius:16px;background:linear-gradient(145deg,#ffffff 0%,#eef4ff 100%);padding:1rem 1rem .9rem;color:#172038;box-shadow:0 10px 20px rgba(20,45,100,.12);overflow:hidden}
 .summary-head{display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.85rem}
 .summary-name{margin:0;font-size:1.1rem;color:#7a2cff;letter-spacing:.01em}
@@ -153,3 +154,12 @@ th,td{border:1px solid #ddd;padding:.5rem}
 .metric-value{font-size:2.16rem;line-height:1;font-weight:800;letter-spacing:.01em;display:inline-block;vertical-align:baseline}
 .summary-total{margin-top:.8rem;padding-top:.65rem;border-top:1px dashed #bfd0f3;color:#2b4374;font-weight:700}
 .summary-empty{color:#4c6597;font-weight:600;background:#edf4ff;border:1px dashed #bfd0f3;padding:.8rem 1rem;border-radius:10px}
+
+.summary-grid--prev .summary-card,
+.summary-card--prev{border:1px solid rgba(235,168,89,.6);background:linear-gradient(145deg,#fffdf8 0%,#fff2df 100%);box-shadow:0 10px 20px rgba(154,99,34,.12)}
+.summary-grid--prev .summary-id,
+.summary-card--prev .summary-id{color:#8c5620;background:#fff3e3;border-color:#efcc9f}
+.summary-grid--prev .metric-pill--20,
+.summary-card--prev .metric-pill--20{border-color:#f0c58f;background:linear-gradient(155deg,#fff7ec,#ffefd8)}
+.summary-grid--prev .metric-pill--15,
+.summary-card--prev .metric-pill--15{border-color:#f2c794;background:linear-gradient(155deg,#fff5e8,#ffe9cb)}
