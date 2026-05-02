@@ -173,7 +173,7 @@ function renderGroups() {
   });
 }
 
-async function loadStaff() { const resp = await fetch(endpoint('/api/staff')); const data = await resp.json(); state.staff = data.staff || []; renderStaffList(); renderGroups(); }
+async function loadStaff() { const resp = await fetch(endpoint('/api/staff'), { cache: 'no-store' }); const data = await resp.json(); state.staff = data.staff || []; renderStaffList(); renderGroups(); }
 async function loadExistingRecords(g) { const resp = await fetch(endpoint(`/api/ot/entries?otstaffid=${encodeURIComponent(g.staff)}&date=${encodeURIComponent(g.date)}`)); if(!resp.ok){throw new Error(await resp.text());} const data = await resp.json(); const entries=data.entries||[]; g.existing = entries.map((e)=>({id:e.id,type:e.type,startTime:e.startTime,endTime:e.endTime})); g.hasPeriodRecord = !!data.exists; g.remarks = typeof data.remarks === "string" ? data.remarks : (entries.length ? (entries[0].remarks || "") : g.remarks); g.remarksReadonly = g.hasPeriodRecord; }
 async function saveRemarksOnly(g){ const resp = await fetch(endpoint('/api/ot/remarks'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({otstaffid:g.staff,date:g.date,remarks:g.remarks})}); if(!resp.ok){throw new Error(await resp.text());} }
 async function deleteExistingRecord(g,id){ const resp=await fetch(endpoint(`/api/ot/entry?id=${encodeURIComponent(id)}`),{method:'DELETE'}); if(resp.ok){await loadExistingRecords(g); renderGroups();}}
@@ -212,6 +212,7 @@ async function reloadActiveSubPage(tabName) {
     return;
   }
   if (tabName === 'staff') {
+    document.getElementById('staff-msg').textContent = '';
     await loadStaff();
   }
 }
