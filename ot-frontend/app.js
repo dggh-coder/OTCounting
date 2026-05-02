@@ -102,7 +102,7 @@ async function loadMonthlyReport() {
   body.innerHTML = `${detailRows}${totalRow}`;
 }
 
-function exportMonthlyReport() {
+function exportMonthlyReport(kind = 'csv') {
   const staffSel = document.getElementById('report-staff');
   const staffID = staffSel?.value || '';
   const month = document.getElementById('report-month')?.value || '';
@@ -112,7 +112,8 @@ function exportMonthlyReport() {
   }
   const yyyymm = month.replace('-', '');
   const staffName = staffSel?.selectedOptions?.[0]?.textContent?.split(' (')[0] || staffID;
-  const url = endpoint(`/api/ot/driver-monthly-report/export?otstaffid=${encodeURIComponent(staffID)}&yyyymm=${encodeURIComponent(yyyymm)}&staffname=${encodeURIComponent(staffName)}`);
+  const suffix = kind === 'xlsx' ? 'export-xlsx' : 'export';
+  const url = endpoint(`/api/ot/driver-monthly-report/${suffix}?otstaffid=${encodeURIComponent(staffID)}&yyyymm=${encodeURIComponent(yyyymm)}&staffname=${encodeURIComponent(staffName)}`);
   window.open(url, '_blank');
 }
 function currentYYYYMM() {
@@ -324,7 +325,8 @@ function bindEvents(){
   }));
   document.querySelectorAll('[data-report-tab]').forEach((btn)=>btn.addEventListener('click', function(){ switchReportTab(this.getAttribute('data-report-tab')); }));
   document.getElementById('report-search')?.addEventListener('click',loadMonthlyReport);
-  document.getElementById('report-export')?.addEventListener('click', exportMonthlyReport);
+  document.getElementById('report-export-csv')?.addEventListener('click', () => exportMonthlyReport('csv'));
+  document.getElementById('report-export-xlsx')?.addEventListener('click', () => exportMonthlyReport('xlsx'));
   document.getElementById('save-staff')?.addEventListener('click',saveStaff);
   document.getElementById('add-group')?.addEventListener('click',()=>{state.groups.push(createGroup()); renderGroups();});
 }
