@@ -78,16 +78,28 @@ function fillReportStaffOptions() {
 async function loadMonthlyReport() {
   const msg = document.getElementById('report-msg');
   const body = document.getElementById('report-body');
+  const context = document.getElementById('report-context');
+  const staffSel = document.getElementById('report-staff');
   const staffID = document.getElementById('report-staff')?.value || '';
   const month = document.getElementById('report-month')?.value || '';
   if (!staffID || !month) { msg.textContent = 'Please select staff and month.'; return; }
   msg.textContent = '';
   const yyyymm = month.replace('-', '');
-  const resp = await fetch(endpoint(`/api/ot/driver-monthly-report?otstaffid=${encodeURIComponent(staffID)}&yyyymm=${encodeURIComponent(yyyymm)}`), { cache: 'no-store' });
+  const staffName = staffSel?.selectedOptions?.[0]?.textContent?.split(' (')[0] || staffID;
+  context.textContent = `${staffName} ${yyyymm} :`;
+  const [resp, summaryResp] = await Promise.all([
+    fetch(endpoint(`/api/ot/driver-monthly-report?otstaffid=${encodeURIComponent(staffID)}&yyyymm=${encodeURIComponent(yyyymm)}`), { cache: 'no-store' }),
+    fetch(endpoint(`/api/ot/driver-monthly-summary?yyyymm=${encodeURIComponent(yyyymm)}`), { cache: 'no-store' })
+  ]);
   if (!resp.ok) { msg.textContent = await resp.text(); return; }
+  if (!summaryResp.ok) { msg.textContent = await summaryResp.text(); return; }
   const data = await resp.json();
+  const summaryData = await summaryResp.json();
+  const summaryRow = (summaryData.rows || []).find((r) => String(r.otstaffid) === String(staffID)) || { totalhrs20: 0, totalhrs15: 0 };
   const rows = data.rows || [];
-  body.innerHTML = rows.length ? rows.map((r)=>`<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td></tr>`).join('') : '<tr><td colspan="3">No data</td></tr>';
+  const detailRows = rows.length ? rows.map((r)=>`<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td></tr>`).join('') : '<tr><td colspan="3">No data</td></tr>';
+  const totalRow = `<tr class="report-total-row"><td colspan="3">${staffName} ${yyyymm}; 2.0 Total: ${summaryRow.totalhrs20}, 1.5 Total: ${summaryRow.totalhrs15}</td></tr>`;
+  body.innerHTML = `${detailRows}${totalRow}`;
 }
 function currentYYYYMM() {
   const now = new Date();

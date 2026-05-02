@@ -163,3 +163,6 @@ th,td{border:1px solid #ddd;padding:.5rem}
 .summary-card--prev .metric-pill--20{border-color:#f0c58f;background:linear-gradient(155deg,#fff7ec,#ffefd8)}
 .summary-grid--prev .metric-pill--15,
 .summary-card--prev .metric-pill--15{border-color:#f2c794;background:linear-gradient(155deg,#fff5e8,#ffe9cb)}
+
+.report-context{color:#cc2d2d;font-weight:800;margin:.35rem 0 .55rem}
+.report-total-row td{font-weight:800;background:#f7faff}
