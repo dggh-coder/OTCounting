@@ -4,7 +4,8 @@ const API_BASE = window.__API_BASE__
 const state = {
   staff: [],
   groups: [],
-  nextGroupId: 1
+  nextGroupId: 1,
+  reportRowsCount: 0
 };
 
 function endpoint(path) { return API_BASE ? `${API_BASE}${path}` : path; }
@@ -72,7 +73,23 @@ function fillReportStaffOptions() {
     .filter((s) => (s.staffgroup || '').trim().toLowerCase() === 'driver')
     .sort((a,b)=> (a.displayname||a.staffid).localeCompare(b.displayname||b.staffid))
     .map((s)=>`<option value="${s.staffid}">${s.displayname || s.staffid} (${s.staffid})</option>`);
-  sel.innerHTML = options.length ? options.join('') : '<option value="">No driver</option>';
+  sel.innerHTML = options.length
+    ? `<option value="" selected>-- Select Driver --</option>${options.join('')}`
+    : '<option value="">No driver</option>';
+}
+
+function resetMonthlyReportPage() {
+  const staff = document.getElementById('report-staff');
+  const month = document.getElementById('report-month');
+  const msg = document.getElementById('report-msg');
+  const context = document.getElementById('report-context');
+  const body = document.getElementById('report-body');
+  if (staff) staff.value = '';
+  if (month) month.value = '';
+  if (msg) msg.textContent = '';
+  if (context) context.textContent = '';
+  if (body) body.innerHTML = '<tr><td colspan="3">No data</td></tr>';
+  state.reportRowsCount = 0;
 }
 
 async function loadMonthlyReport() {
@@ -97,6 +114,7 @@ async function loadMonthlyReport() {
   const summaryData = await summaryResp.json();
   const summaryRow = (summaryData.rows || []).find((r) => String(r.otstaffid) === String(staffID)) || { totalhrs20: 0, totalhrs15: 0 };
   const rows = data.rows || [];
+  state.reportRowsCount = rows.length;
   let detailRows = '';
   let lastDate = '';
   rows.forEach((r) => {
@@ -117,6 +135,10 @@ function exportMonthlyReport(kind = 'csv') {
   const month = document.getElementById('report-month')?.value || '';
   if (!staffID || !month) {
     document.getElementById('report-msg').textContent = 'Please select staff and month before export.';
+    return;
+  }
+  if (!state.reportRowsCount) {
+    window.alert('No result for export.');
     return;
   }
   const yyyymm = month.replace('-', '');
@@ -332,7 +354,11 @@ function bindEvents(){
     if (view === 'driver' && targetTab) switchTab(targetTab);
     void reloadView(view, targetTab);
   }));
-  document.querySelectorAll('[data-report-tab]').forEach((btn)=>btn.addEventListener('click', function(){ switchReportTab(this.getAttribute('data-report-tab')); }));
+  document.querySelectorAll('[data-report-tab]').forEach((btn)=>btn.addEventListener('click', function(){
+    const tab = this.getAttribute('data-report-tab');
+    switchReportTab(tab);
+    if (tab === 'monthly') resetMonthlyReportPage();
+  }));
   document.getElementById('report-search')?.addEventListener('click',loadMonthlyReport);
   document.getElementById('report-export-csv')?.addEventListener('click', () => exportMonthlyReport('csv'));
   document.getElementById('report-export-xlsx')?.addEventListener('click', () => exportMonthlyReport('xlsx'));
@@ -348,8 +374,7 @@ async function reloadActiveSubPage(tabName) {
   if (tabName === 'report') {
     fillReportStaffOptions();
     switchReportTab('monthly');
-    const monthEl = document.getElementById('report-month');
-    if (monthEl && !monthEl.value) monthEl.value = `${currentYYYYMM().slice(0,4)}-${currentYYYYMM().slice(4,6)}`;
+    resetMonthlyReportPage();
     return;
   }
   if (tabName === 'ot') {
