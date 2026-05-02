@@ -35,7 +35,7 @@ function startClock(){
   setInterval(tick,1000);
 }
 function switchTab(tabName) {
-  ["ot", "staff"].forEach((n) => {
+  ["summary", "ot", "staff"].forEach((n) => {
     const section = document.getElementById(`tab-${n}`);
     const button = document.getElementById(`tab-btn-${n}`);
     if (section) section.classList.toggle("hidden", n !== tabName);
@@ -44,13 +44,44 @@ function switchTab(tabName) {
 }
 
 function setDriverMode(mode) {
+  const summaryBtn = document.getElementById("tab-btn-summary");
   const otBtn = document.getElementById("tab-btn-ot");
   const staffBtn = document.getElementById("tab-btn-staff");
+  if (summaryBtn) summaryBtn.classList.toggle("hidden", mode !== "ot");
   if (otBtn) otBtn.classList.toggle("hidden", mode !== "ot");
   if (staffBtn) staffBtn.classList.toggle("hidden", mode !== "staff");
-  switchTab(mode);
+  switchTab(mode === "ot" ? "summary" : mode);
 }
 
+
+
+function currentYYYYMM() {
+  const now = new Date();
+  return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function renderDriverSummary(rows, yyyymm) {
+  const label = document.getElementById("summary-month-label");
+  if (label) label.textContent = `Month: ${yyyymm}`;
+  const root = document.getElementById("driver-summary-grid");
+  if (!root) return;
+  root.innerHTML = "";
+  if (!rows.length) { root.innerHTML = "<p>No driver data found.</p>"; return; }
+  rows.forEach((r) => {
+    const card = document.createElement("article");
+    card.className = "summary-card";
+    card.innerHTML = `<h3>${r.displayname || r.otstaffid} (${r.otstaffid})</h3><div class="summary-stat">2.0x totalhrs20: ${Number(r.totalhrs20 || 0).toFixed(1)}</div><div class="summary-stat">1.5x totalhrs15: ${Number(r.totalhrs15 || 0).toFixed(1)}</div>`;
+    root.appendChild(card);
+  });
+}
+
+async function loadDriverSummary() {
+  const yyyymm = currentYYYYMM();
+  const resp = await fetch(endpoint(`/api/ot/driver-monthly-summary?yyyymm=${encodeURIComponent(yyyymm)}`), { cache: 'no-store' });
+  if (!resp.ok) throw new Error(await resp.text());
+  const data = await resp.json();
+  renderDriverSummary(data.rows || [], yyyymm);
+}
 function fillStaffOptions(selected) {
   return ["<option value=''>-- Select --</option>"]
     .concat(state.staff.filter((s) => (s.staffgroup || "").trim().toLowerCase() === "driver")
@@ -214,6 +245,10 @@ function bindEvents(){
 }
 
 async function reloadActiveSubPage(tabName) {
+  if (tabName === 'summary') {
+    await loadDriverSummary();
+    return;
+  }
   if (tabName === 'ot') {
     state.groups = [createGroup()];
     renderGroups();
