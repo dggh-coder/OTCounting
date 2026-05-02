@@ -139,7 +139,17 @@ th,td{border:1px solid #ddd;padding:.5rem}
 .staff-table tbody tr:nth-child(even){background:#f8fbff}
 .staff-table td:last-child,.staff-table th:last-child{text-align:center;width:110px}
 
-.summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.9rem}
-.summary-card{border:1px solid #d5dff1;border-radius:12px;background:#f8fbff;padding:.9rem;color:#172038}
-.summary-card h3{margin:.1rem 0 .45rem;font-size:1.05rem}
-.summary-stat{font-weight:700}
+.summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.summary-card{position:relative;border:1px solid rgba(116,154,224,.55);border-radius:16px;background:linear-gradient(145deg,#ffffff 0%,#eef4ff 100%);padding:1rem 1rem .9rem;color:#172038;box-shadow:0 10px 20px rgba(20,45,100,.12);overflow:hidden}
+.summary-card::before{content:"";position:absolute;inset:-35% auto auto -20%;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(99,197,255,.28),rgba(99,197,255,0));pointer-events:none}
+.summary-head{display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.85rem}
+.summary-card h3{margin:0;font-size:1.1rem;color:#0c2a67;letter-spacing:.01em}
+.summary-id{font-size:.8rem;color:#4a5f8f;background:#f1f6ff;border:1px solid #c8d8f6;border-radius:999px;padding:.2rem .55rem;font-weight:700}
+.summary-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
+.metric-pill{padding:.65rem .7rem;border-radius:12px;border:1px solid transparent;display:flex;flex-direction:column;gap:.2rem;background:#fff}
+.metric-pill--20{border-color:#9fccff;background:linear-gradient(155deg,#f5fbff,#ebf5ff)}
+.metric-pill--15{border-color:#b8c6ff;background:linear-gradient(155deg,#f7f8ff,#eef1ff)}
+.metric-label{font-size:.8rem;color:#4c6597;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.metric-pill strong{font-size:1.08rem;color:#0f2f70}
+.summary-total{margin-top:.8rem;padding-top:.65rem;border-top:1px dashed #bfd0f3;color:#2b4374;font-weight:700}
+.summary-empty{color:#4c6597;font-weight:600;background:#edf4ff;border:1px dashed #bfd0f3;padding:.8rem 1rem;border-radius:10px}

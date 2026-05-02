@@ -62,15 +62,23 @@ function currentYYYYMM() {
 
 function renderDriverSummary(rows, yyyymm) {
   const label = document.getElementById("summary-month-label");
-  if (label) label.textContent = `Month: ${yyyymm}`;
+  if (label) label.textContent = `Summary Month · ${yyyymm}`;
   const root = document.getElementById("driver-summary-grid");
   if (!root) return;
   root.innerHTML = "";
-  if (!rows.length) { root.innerHTML = "<p>No driver data found.</p>"; return; }
+  if (!rows.length) { root.innerHTML = "<p class='summary-empty'>No driver data found for this month.</p>"; return; }
   rows.forEach((r) => {
+    const hrs20 = Number(r.totalhrs20 || 0);
+    const hrs15 = Number(r.totalhrs15 || 0);
+    const totalWeighted = hrs20 * 2 + hrs15 * 1.5;
     const card = document.createElement("article");
     card.className = "summary-card";
-    card.innerHTML = `<h3>${r.displayname || r.otstaffid} (${r.otstaffid})</h3><div class="summary-stat">2.0x totalhrs20: ${Number(r.totalhrs20 || 0).toFixed(1)}</div><div class="summary-stat">1.5x totalhrs15: ${Number(r.totalhrs15 || 0).toFixed(1)}</div>`;
+    card.innerHTML = `<div class="summary-head"><h3>${r.displayname || r.otstaffid}</h3><span class="summary-id">ID ${r.otstaffid}</span></div>
+    <div class="summary-metrics">
+      <div class="metric-pill metric-pill--20"><span class="metric-label">2.0x OT</span><strong>${hrs20.toFixed(1)} hrs</strong></div>
+      <div class="metric-pill metric-pill--15"><span class="metric-label">1.5x OT</span><strong>${hrs15.toFixed(1)} hrs</strong></div>
+    </div>
+    <div class="summary-total">Weighted Total: <strong>${totalWeighted.toFixed(1)} hrs</strong></div>`;
     root.appendChild(card);
   });
 }
