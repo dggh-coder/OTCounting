@@ -30,9 +30,54 @@
     <section id="view-driver" class="page-view hidden">
       <h1>Driver OT Management</h1>
       <nav class="tabs">
+        <button id="tab-btn-summary" class="tab-btn" data-tab="summary" type="button">Summary</button>
         <button id="tab-btn-ot" class="tab-btn active" data-tab="ot" type="button">OT Input</button>
+        <button id="tab-btn-report" class="tab-btn" data-tab="report" type="button">Report</button>
         <button id="tab-btn-staff" class="tab-btn" data-tab="staff" type="button">Staff Input</button>
       </nav>
+
+      <section id="tab-report" class="tab-content hidden">
+        <section class="card">
+          <h2>Report</h2>
+          <nav class="tabs report-subtabs">
+            <button id="report-tab-btn-monthly" class="tab-btn active" data-report-tab="monthly" type="button">Monthly Report</button>
+            <button id="report-tab-btn-audit" class="tab-btn" data-report-tab="audit" type="button">Audit Report</button>
+          </nav>
+
+          <section id="report-tab-monthly">
+            <div class="row">
+              <label>Staff
+                <select id="report-staff"></select>
+              </label>
+              <label>Month
+                <input id="report-month" type="month">
+              </label>
+              <button id="report-search" type="button" class="btn-primary">Search</button>
+            </div>
+            <div id="report-msg" class="msg"></div>
+            <div id="report-context" class="report-context"></div>
+            <table>
+              <thead><tr><th>Date</th><th>Start Time</th><th>End Time</th></tr></thead>
+              <tbody id="report-body"><tr><td colspan="3">No data</td></tr></tbody>
+            </table>
+          </section>
+
+          <section id="report-tab-audit" class="hidden">
+            <p class="hint">Audit Report (coming soon).</p>
+          </section>
+        </section>
+      </section>
+
+      <section id="tab-summary" class="tab-content hidden">
+        <section class="card">
+          <h2>Driver Monthly Summary</h2>
+          <p class="hint" id="summary-month-label"></p>
+          <div id="driver-summary-grid" class="summary-grid"></div>
+          <hr class="summary-divider">
+          <p class="hint" id="summary-prev-month-label"></p>
+          <div id="driver-summary-grid-prev" class="summary-grid summary-grid--prev"></div>
+        </section>
+      </section>
 
       <section id="tab-ot" class="tab-content">
         <section class="card">
