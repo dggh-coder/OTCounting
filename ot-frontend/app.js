@@ -80,13 +80,11 @@ function fillReportStaffOptions() {
 
 function resetMonthlyReportPage() {
   const staff = document.getElementById('report-staff');
-  const year = document.getElementById('report-year');
-  const month = document.getElementById('report-month-only');
+  const month = document.getElementById('report-month');
   const msg = document.getElementById('report-msg');
   const context = document.getElementById('report-context');
   const body = document.getElementById('report-body');
   if (staff) staff.value = '';
-  if (year) year.value = '';
   if (month) month.value = '';
   if (msg) msg.textContent = '';
   if (context) context.textContent = '';
@@ -100,11 +98,10 @@ async function loadMonthlyReport() {
   const context = document.getElementById('report-context');
   const staffSel = document.getElementById('report-staff');
   const staffID = document.getElementById('report-staff')?.value || '';
-  const year = (document.getElementById('report-year')?.value || '').trim();
-  const monthOnly = document.getElementById('report-month-only')?.value || '';
-  if (!staffID || !year || !monthOnly) { msg.textContent = 'Please select staff and month.'; return; }
+  const month = document.getElementById('report-month')?.value || '';
+  if (!staffID || !month) { msg.textContent = 'Please select staff and month.'; return; }
   msg.textContent = '';
-  const yyyymm = `${year}${monthOnly}`;
+  const yyyymm = month.replace('-', '');
   const staffName = staffSel?.selectedOptions?.[0]?.textContent?.split(' (')[0] || staffID;
   context.textContent = `${staffName} ${yyyymm} :`;
   const [resp, summaryResp] = await Promise.all([
@@ -135,9 +132,8 @@ async function loadMonthlyReport() {
 function exportMonthlyReport(kind = 'csv') {
   const staffSel = document.getElementById('report-staff');
   const staffID = staffSel?.value || '';
-  const year = (document.getElementById('report-year')?.value || '').trim();
-  const monthOnly = document.getElementById('report-month-only')?.value || '';
-  if (!staffID || !year || !monthOnly) {
+  const month = document.getElementById('report-month')?.value || '';
+  if (!staffID || !month) {
     document.getElementById('report-msg').textContent = 'Please select staff and month before export.';
     return;
   }
@@ -145,7 +141,7 @@ function exportMonthlyReport(kind = 'csv') {
     window.alert('No result for export.');
     return;
   }
-  const yyyymm = `${year}${monthOnly}`;
+  const yyyymm = month.replace('-', '');
   const staffName = staffSel?.selectedOptions?.[0]?.textContent?.split(' (')[0] || staffID;
   const suffix = kind === 'xlsx' ? 'export-xlsx' : 'export';
   const url = endpoint(`/api/ot/driver-monthly-report/${suffix}?otstaffid=${encodeURIComponent(staffID)}&yyyymm=${encodeURIComponent(yyyymm)}&staffname=${encodeURIComponent(staffName)}`);
@@ -366,12 +362,16 @@ function bindEvents(){
   }));
 
   document.getElementById('report-year-prev')?.addEventListener('click', () => {
-    const y = Number(document.getElementById('report-year')?.value || new Date().getFullYear());
-    document.getElementById('report-year').value = String(y - 1);
+    const monthEl = document.getElementById('report-month');
+    if (!monthEl || !monthEl.value) return;
+    const [y, m] = monthEl.value.split('-').map(Number);
+    monthEl.value = `${y - 1}-${String(m).padStart(2, '0')}`;
   });
   document.getElementById('report-year-next')?.addEventListener('click', () => {
-    const y = Number(document.getElementById('report-year')?.value || new Date().getFullYear());
-    document.getElementById('report-year').value = String(y + 1);
+    const monthEl = document.getElementById('report-month');
+    if (!monthEl || !monthEl.value) return;
+    const [y, m] = monthEl.value.split('-').map(Number);
+    monthEl.value = `${y + 1}-${String(m).padStart(2, '0')}`;
   });
   document.getElementById('report-search')?.addEventListener('click',loadMonthlyReport);
   document.getElementById('report-export-csv')?.addEventListener('click', () => exportMonthlyReport('csv'));

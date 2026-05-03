@@ -51,17 +51,9 @@
               </label>
               <label>Month
                 <div class="month-picker-wrap">
-                  <div class="year-stepper">
-                    <button id="report-year-prev" type="button" class="btn-ghost year-step">&lt;</button>
-                    <input id="report-year" type="text" inputmode="numeric" maxlength="4" placeholder="YYYY">
-                    <button id="report-year-next" type="button" class="btn-ghost year-step">&gt;</button>
-                  </div>
-                  <select id="report-month-only">
-                    <option value="">-- Month --</option>
-                    <option value="01">Jan</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Apr</option>
-                    <option value="05">May</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Aug</option>
-                    <option value="09">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
-                  </select>
+                  <button id="report-year-prev" type="button" class="btn-ghost year-step">&lt;</button>
+                  <input id="report-month" type="month">
+                  <button id="report-year-next" type="button" class="btn-ghost year-step">&gt;</button>
                 </div>
               </label>
               <button id="report-search" type="button" class="btn-primary">Search</button>
