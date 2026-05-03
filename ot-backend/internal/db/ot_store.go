@@ -89,11 +89,11 @@ type ProcessTextRow struct {
 }
 
 type DriverMonthlySummary struct {
-	OTStaffID    string  `json:"otstaffid"`
-	DisplayName  string  `json:"displayname"`
-	YYYYMM       string  `json:"yyyymm"`
-	TotalHrs20   int64   `json:"totalhrs20"`
-	TotalHrs15   int64   `json:"totalhrs15"`
+	OTStaffID   string `json:"otstaffid"`
+	DisplayName string `json:"displayname"`
+	YYYYMM      string `json:"yyyymm"`
+	TotalHrs20  int64  `json:"totalhrs20"`
+	TotalHrs15  int64  `json:"totalhrs15"`
 }
 
 type DriverMonthlyReportRow struct {
@@ -101,6 +101,15 @@ type DriverMonthlyReportRow struct {
 	StartTime string `json:"startTime"`
 	EndTime   string `json:"endTime"`
 	Remarks   string `json:"remarks"`
+}
+type DriverAuditSummaryRow struct {
+	ID           string `json:"id"`
+	Date         string `json:"date"`
+	Period       string `json:"period"`
+	Process20Txt string `json:"process20txt"`
+	Process15Txt string `json:"process15txt"`
+	TotalHrs20   int64  `json:"totalhrs20"`
+	TotalHrs15   int64  `json:"totalhrs15"`
 }
 
 type timeSpan struct {
@@ -369,6 +378,47 @@ func (s *Store) GetDriverMonthlyReportRows(ctx context.Context, staffID, yyyymm 
 		out = append(out, r)
 	}
 	return out, rows.Err()
+}
+
+func (s *Store) GetDriverAuditReportRows(ctx context.Context, staffID, startDate, endDate string) ([]DriverMonthlyReportRow, []DriverAuditSummaryRow, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT TO_CHAR(p.date, 'YYYY-MM-DD') AS date_label, COALESCE(p.remarks, '') AS remarks, d.starttime::text, d.endtime::text
+		FROM ot_driverstd.otperiod p
+		JOIN ot_driverstd.otdetails d ON d.otid = p.id
+		WHERE BTRIM(p.otstaffid)=BTRIM($1) AND p.date BETWEEN $2::date AND $3::date
+		ORDER BY p.date, d.starttime, d.endtime, d.id
+	`, staffID, startDate, endDate)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+	detail := []DriverMonthlyReportRow{}
+	for rows.Next() {
+		var r DriverMonthlyReportRow
+		if err := rows.Scan(&r.Date, &r.Remarks, &r.StartTime, &r.EndTime); err != nil {
+			return nil, nil, err
+		}
+		detail = append(detail, r)
+	}
+	sumRows, err := s.pool.Query(ctx, `
+		SELECT id, TO_CHAR(date_label,'YYYY-MM-DD'), RIGHT(id,2), process20txt, process15txt, totalhrs20::bigint, totalhrs15::bigint
+		FROM ot_driverstd.periodresult
+		WHERE BTRIM(otstaffid)=BTRIM($1) AND date_label BETWEEN $2::date AND $3::date
+		ORDER BY date_label, id
+	`, staffID, startDate, endDate)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer sumRows.Close()
+	summary := []DriverAuditSummaryRow{}
+	for sumRows.Next() {
+		var r DriverAuditSummaryRow
+		if err := sumRows.Scan(&r.ID, &r.Date, &r.Period, &r.Process20Txt, &r.Process15Txt, &r.TotalHrs20, &r.TotalHrs15); err != nil {
+			return nil, nil, err
+		}
+		summary = append(summary, r)
+	}
+	return detail, summary, nil
 }
 
 func (s *Store) DeleteEntryAndRebuild(ctx context.Context, detailID int64) error {
