@@ -165,6 +165,41 @@ func (h *OTHandler) ProcessTexts(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]any{"rows": rows})
 }
 
+func (h *OTHandler) DriverMonthlySummary(w http.ResponseWriter, r *http.Request) {
+	setJSON(w)
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	yyyymm := strings.TrimSpace(r.URL.Query().Get("yyyymm"))
+	rows, err := h.Store.GetDriverMonthlySummary(r.Context(), yyyymm)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	_ = json.NewEncoder(w).Encode(map[string]any{"rows": rows})
+}
+
+func (h *OTHandler) DriverMonthlyReport(w http.ResponseWriter, r *http.Request) {
+	setJSON(w)
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	staffID := strings.TrimSpace(r.URL.Query().Get("otstaffid"))
+	yyyymm := strings.TrimSpace(r.URL.Query().Get("yyyymm"))
+	if staffID == "" || yyyymm == "" {
+		http.Error(w, "otstaffid and yyyymm are required", http.StatusBadRequest)
+		return
+	}
+	rows, err := h.Store.GetDriverMonthlyReportRows(r.Context(), staffID, yyyymm)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	_ = json.NewEncoder(w).Encode(map[string]any{"rows": rows})
+}
+
 func (h *OTHandler) DeleteEntry(w http.ResponseWriter, r *http.Request) {
 	setJSON(w)
 	if r.Method == http.MethodOptions {

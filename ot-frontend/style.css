@@ -138,3 +138,85 @@ th,td{border:1px solid #ddd;padding:.5rem}
 .staff-table th{background:#eef3ff;font-weight:700}
 .staff-table tbody tr:nth-child(even){background:#f8fbff}
 .staff-table td:last-child,.staff-table th:last-child{text-align:center;width:110px}
+
+.summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.summary-divider{border:none;border-top:2px dashed #c2d3f4;margin:1.15rem 0 .95rem}
+.summary-card{position:relative;border:1px solid rgba(116,154,224,.55);border-radius:16px;background:linear-gradient(145deg,#ffffff 0%,#eef4ff 100%);padding:1rem 1rem .9rem;color:#172038;box-shadow:0 10px 20px rgba(20,45,100,.12);overflow:hidden}
+.summary-head{display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.85rem}
+.summary-name{margin:0;font-size:1.1rem;color:#7a2cff;letter-spacing:.01em}
+.summary-id{font-size:.8rem;color:#4a5f8f;background:#f1f6ff;border:1px solid #c8d8f6;border-radius:999px;padding:.2rem .55rem;font-weight:700}
+.summary-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
+.metric-pill{padding:.65rem .7rem;border-radius:12px;border:1px solid transparent;display:flex;flex-direction:column;gap:.2rem;background:#fff}
+.metric-pill--20{border-color:#9fccff;background:linear-gradient(155deg,#f5fbff,#ebf5ff)}
+.metric-pill--15{border-color:#b8c6ff;background:linear-gradient(155deg,#f7f8ff,#eef1ff)}
+.metric-label{font-size:.8rem;color:#4c6597;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.metric-pill strong{font-size:1.08rem;color:#0f2f70}
+.metric-value{font-size:2.16rem;line-height:1;font-weight:800;letter-spacing:.01em;display:inline-block;vertical-align:baseline}
+.summary-total{margin-top:.8rem;padding-top:.65rem;border-top:1px dashed #bfd0f3;color:#2b4374;font-weight:700}
+.summary-empty{color:#4c6597;font-weight:600;background:#edf4ff;border:1px dashed #bfd0f3;padding:.8rem 1rem;border-radius:10px}
+
+.summary-grid--prev .summary-card,
+.summary-card--prev{border:1px solid rgba(235,168,89,.6);background:linear-gradient(145deg,#fffdf8 0%,#fff2df 100%);box-shadow:0 10px 20px rgba(154,99,34,.12)}
+.summary-grid--prev .summary-id,
+.summary-card--prev .summary-id{color:#8c5620;background:#fff3e3;border-color:#efcc9f}
+.summary-grid--prev .metric-pill--20,
+.summary-card--prev .metric-pill--20{border-color:#f0c58f;background:linear-gradient(155deg,#fff7ec,#ffefd8)}
+.summary-grid--prev .metric-pill--15,
+.summary-card--prev .metric-pill--15{border-color:#f2c794;background:linear-gradient(155deg,#fff5e8,#ffe9cb)}
+
+.report-context{color:#cc2d2d;font-weight:800;margin:.35rem 0 .55rem}
+.report-total-row td{font-weight:800;background:#f7faff}
+.report-remark-row td{background:#fff9f1;color:#8a4f1b;font-weight:700}
+.report-context-row{display:flex;align-items:center;justify-content:space-between;gap:.8rem}
+.report-export-actions{display:flex;gap:.55rem}
+.btn-export{background:#1f9d57;color:#fff;border:none;font-weight:800;padding:.52rem 1rem;border-radius:10px;box-shadow:0 8px 16px rgba(31,157,87,.28)}
+.btn-export:hover{background:#16884a}
+.btn-export-xlsx{background:#1b7f46}
+.btn-export-xlsx:hover{background:#146539}
+
+#report-tab-monthly .row{
+  background:linear-gradient(145deg,#f8fbff,#eef4ff);
+  border:1px solid #cfe0ff;
+  border-radius:14px;
+  padding:.85rem;
+  box-shadow:0 8px 18px rgba(41,88,170,.08);
+}
+#report-tab-monthly label{
+  color:#173b7a;
+  font-weight:800;
+  font-size:1.06rem;
+}
+#report-tab-monthly select,
+#report-tab-monthly input[type="month"],
+#report-tab-monthly input[type="text"]{
+  height:42px;
+  border:1px solid #9ec0f8;
+  border-radius:10px;
+  background:linear-gradient(180deg,#ffffff,#f3f8ff);
+  color:#0f2f68;
+  font-weight:700;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 2px 6px rgba(48,98,186,.08);
+}
+#report-tab-monthly select:focus,
+#report-tab-monthly input[type="month"]:focus,
+#report-tab-monthly input[type="text"]:focus{
+  outline:none;
+  border-color:#4f92ff;
+  box-shadow:0 0 0 3px rgba(79,146,255,.18);
+}
+
+.month-picker-wrap{display:flex;gap:.5rem;align-items:center;position:relative}
+.year-step{height:42px;padding:0 .65rem;font-weight:800}
+.month-trigger{height:42px;min-width:170px;border:1px solid #9ec0f8;border-radius:10px;background:linear-gradient(180deg,#ffffff,#f3f8ff);font-weight:700;color:#0f2f68;text-align:left;padding:0 .8rem}
+.month-pop{position:absolute;top:48px;left:0;z-index:30;width:260px;background:#fff;border:1px solid #bfd3fb;border-radius:12px;box-shadow:0 12px 26px rgba(20,50,110,.2);padding:.7rem}
+.month-pop-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.55rem}
+.month-pop-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.4rem}
+.month-cell{border:1px solid #d3e1ff;border-radius:8px;background:#f8fbff;padding:.45rem .3rem;font-weight:700;color:#21467f}
+.month-cell.active,.month-cell:hover{background:#2f7bff;color:#fff;border-color:#2f7bff}
+
+.ot-group-form input.js-date-picker{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%233765b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right .55rem center;
+  padding-right:2.1rem;
+}
