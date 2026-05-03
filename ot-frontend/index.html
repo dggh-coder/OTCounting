@@ -51,9 +51,11 @@
               </label>
               <label>Month
                 <div class="month-picker-wrap">
-                  <button id="report-year-prev" type="button" class="btn-ghost year-step">&lt;</button>
-                  <input id="report-month" type="month">
-                  <button id="report-year-next" type="button" class="btn-ghost year-step">&gt;</button>
+                  <button id="report-month-trigger" type="button" class="month-trigger">Select Month</button>
+                  <div id="report-month-picker" class="month-pop hidden">
+                    <div class="month-pop-head"><button id="report-year-prev" type="button" class="btn-ghost year-step">&lt;</button><strong id="report-year-label">----</strong><button id="report-year-next" type="button" class="btn-ghost year-step">&gt;</button></div>
+                    <div id="report-month-grid" class="month-pop-grid"></div>
+                  </div>
                 </div>
               </label>
               <button id="report-search" type="button" class="btn-primary">Search</button>

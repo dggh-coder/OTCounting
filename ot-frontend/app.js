@@ -5,7 +5,9 @@ const state = {
   staff: [],
   groups: [],
   nextGroupId: 1,
-  reportRowsCount: 0
+  reportRowsCount: 0,
+  reportMonthYear: new Date().getFullYear(),
+  reportMonthValue: ""
 };
 
 function endpoint(path) { return API_BASE ? `${API_BASE}${path}` : path; }
@@ -78,14 +80,41 @@ function fillReportStaffOptions() {
     : '<option value="">No driver</option>';
 }
 
+
+function monthLabel(v) {
+  if (!v) return 'Select Month';
+  const [y, m] = v.split('-');
+  const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${names[Number(m)-1]} ${y}`;
+}
+
+function renderReportMonthPicker() {
+  document.getElementById('report-year-label').textContent = String(state.reportMonthYear);
+  const root = document.getElementById('report-month-grid');
+  if (!root) return;
+  const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  root.innerHTML = names.map((n, idx) => {
+    const val = `${state.reportMonthYear}-${String(idx+1).padStart(2,'0')}`;
+    const active = state.reportMonthValue === val ? 'active' : '';
+    return `<button type="button" class="month-cell ${active}" data-month="${val}">${n}</button>`;
+  }).join('');
+  root.querySelectorAll('[data-month]').forEach((btn)=>btn.addEventListener('click', () => {
+    state.reportMonthValue = btn.getAttribute('data-month');
+    document.getElementById('report-month-trigger').textContent = monthLabel(state.reportMonthValue);
+    document.getElementById('report-month-picker').classList.add('hidden');
+    renderReportMonthPicker();
+  }));
+}
 function resetMonthlyReportPage() {
   const staff = document.getElementById('report-staff');
-  const month = document.getElementById('report-month');
+  const monthTrigger = document.getElementById('report-month-trigger');
   const msg = document.getElementById('report-msg');
   const context = document.getElementById('report-context');
   const body = document.getElementById('report-body');
   if (staff) staff.value = '';
-  if (month) month.value = '';
+  if (monthTrigger) monthTrigger.textContent = 'Select Month';
+  state.reportMonthValue = '';
+  state.reportMonthYear = new Date().getFullYear();
   if (msg) msg.textContent = '';
   if (context) context.textContent = '';
   if (body) body.innerHTML = '<tr><td colspan="3">No data</td></tr>';
@@ -98,7 +127,7 @@ async function loadMonthlyReport() {
   const context = document.getElementById('report-context');
   const staffSel = document.getElementById('report-staff');
   const staffID = document.getElementById('report-staff')?.value || '';
-  const month = document.getElementById('report-month')?.value || '';
+  const month = state.reportMonthValue || '';
   if (!staffID || !month) { msg.textContent = 'Please select staff and month.'; return; }
   msg.textContent = '';
   const yyyymm = month.replace('-', '');
@@ -132,7 +161,7 @@ async function loadMonthlyReport() {
 function exportMonthlyReport(kind = 'csv') {
   const staffSel = document.getElementById('report-staff');
   const staffID = staffSel?.value || '';
-  const month = document.getElementById('report-month')?.value || '';
+  const month = state.reportMonthValue || '';
   if (!staffID || !month) {
     document.getElementById('report-msg').textContent = 'Please select staff and month before export.';
     return;
@@ -361,18 +390,17 @@ function bindEvents(){
     if (tab === 'monthly') resetMonthlyReportPage();
   }));
 
-  document.getElementById('report-year-prev')?.addEventListener('click', () => {
-    const monthEl = document.getElementById('report-month');
-    if (!monthEl || !monthEl.value) return;
-    const [y, m] = monthEl.value.split('-').map(Number);
-    monthEl.value = `${y - 1}-${String(m).padStart(2, '0')}`;
+  document.getElementById('report-month-trigger')?.addEventListener('click', () => {
+    document.getElementById('report-month-picker').classList.toggle('hidden');
+    renderReportMonthPicker();
   });
-  document.getElementById('report-year-next')?.addEventListener('click', () => {
-    const monthEl = document.getElementById('report-month');
-    if (!monthEl || !monthEl.value) return;
-    const [y, m] = monthEl.value.split('-').map(Number);
-    monthEl.value = `${y + 1}-${String(m).padStart(2, '0')}`;
+  document.addEventListener('click', (e) => {
+    const wrap = document.querySelector('.month-picker-wrap');
+    if (!wrap || wrap.contains(e.target)) return;
+    document.getElementById('report-month-picker')?.classList.add('hidden');
   });
+  document.getElementById('report-year-prev')?.addEventListener('click', () => { state.reportMonthYear -= 1; renderReportMonthPicker(); });
+  document.getElementById('report-year-next')?.addEventListener('click', () => { state.reportMonthYear += 1; renderReportMonthPicker(); });
   document.getElementById('report-search')?.addEventListener('click',loadMonthlyReport);
   document.getElementById('report-export-csv')?.addEventListener('click', () => exportMonthlyReport('csv'));
   document.getElementById('report-export-xlsx')?.addEventListener('click', () => exportMonthlyReport('xlsx'));
