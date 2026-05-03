@@ -342,8 +342,9 @@ function resetStaffInputForm() {
 }
 
 function bindEvents(){
-  document.querySelectorAll('.tab-btn').forEach((btn)=>btn.addEventListener('click', async function(){
+  document.querySelectorAll('[data-tab]').forEach((btn)=>btn.addEventListener('click', async function(){
     const tab = this.getAttribute('data-tab');
+    if (!tab) return;
     switchTab(tab);
     await reloadActiveSubPage(tab);
   }));
