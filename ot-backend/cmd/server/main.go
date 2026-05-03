@@ -42,6 +42,8 @@ func main() {
 	mux.HandleFunc("/api/ot/driver-monthly-summary", otHandler.DriverMonthlySummary)
 	mux.HandleFunc("/api/ot/driver-monthly-report", otHandler.DriverMonthlyReport)
 	mux.HandleFunc("/api/ot/driver-audit-report", otHandler.DriverAuditReport)
+	mux.HandleFunc("/api/ot/driver-audit-report/export", otHandler.DriverAuditReportExport)
+	mux.HandleFunc("/api/ot/driver-audit-report/export-xlsx", otHandler.DriverAuditReportExportXLSX)
 	mux.HandleFunc("/api/ot/driver-monthly-report/export", otHandler.DriverMonthlyReportExport)
 	mux.HandleFunc("/api/ot/driver-monthly-report/export-xlsx", otHandler.DriverMonthlyReportExportXLSX)
 	mux.HandleFunc("/api/staff", otHandler.Staff)

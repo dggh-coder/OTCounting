@@ -214,8 +214,8 @@ function renderAuditRows(rows, summaryRows) {
     const p15 = ["00", "01", "02"].map((p) => `[<strong>${day[p]?.process15txt || ''}</strong>]`).join(' + ');
     const t20 = ["00", "01", "02"].reduce((acc, p) => acc + Number(day[p]?.totalhrs20 || 0), 0);
     const t15 = ["00", "01", "02"].reduce((acc, p) => acc + Number(day[p]?.totalhrs15 || 0), 0);
-    html += `<tr class="report-total-row"><td colspan="3">2.0 OT: ${p20} = ${t20} hrs</td></tr>`;
-    html += `<tr class="report-total-row"><td colspan="3">1.5 OT: ${p15} = ${t15} hrs</td></tr>`;
+    html += `<tr class="audit-total-row"><td colspan="3">2.0 OT: ${p20} = ${t20} hrs</td></tr>`;
+    html += `<tr class="audit-total-row"><td colspan="3">1.5 OT: ${p15} = ${t15} hrs</td></tr>`;
   });
   body.innerHTML = html || '<tr><td colspan="3">No data</td></tr>';
 }
@@ -236,6 +236,25 @@ async function loadAuditReport() {
   state.auditRows = data.rows || [];
   state.auditRowsCount = state.auditRows.length;
   renderAuditRows(state.auditRows, data.summaryRows || []);
+}
+
+function exportAuditReport(kind = 'csv') {
+  const staffSel = document.getElementById('audit-staff');
+  const staffID = staffSel?.value || '';
+  const startDate = document.getElementById('audit-start-date')?.value.trim() || '';
+  const endDate = document.getElementById('audit-end-date')?.value.trim() || '';
+  if (!staffID || !startDate || !endDate) {
+    document.getElementById('audit-msg').textContent = 'Please select staff, start date and end date before export.';
+    return;
+  }
+  if (!state.auditRowsCount) {
+    window.alert('No result for export.');
+    return;
+  }
+  const staffName = staffSel?.selectedOptions?.[0]?.textContent?.split(' (')[0] || staffID;
+  const suffix = kind === 'xlsx' ? 'export-xlsx' : 'export';
+  const url = endpoint(`/api/ot/driver-audit-report/${suffix}?otstaffid=${encodeURIComponent(staffID)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&staffname=${encodeURIComponent(staffName)}`);
+  window.open(url, '_blank');
 }
 function currentYYYYMM() {
   const now = new Date();
@@ -467,8 +486,8 @@ function bindEvents(){
   document.getElementById('report-export-csv')?.addEventListener('click', () => exportMonthlyReport('csv'));
   document.getElementById('report-export-xlsx')?.addEventListener('click', () => exportMonthlyReport('xlsx'));
   document.getElementById('audit-search')?.addEventListener('click', loadAuditReport);
-  document.getElementById('audit-export-csv')?.addEventListener('click', () => window.print());
-  document.getElementById('audit-export-xlsx')?.addEventListener('click', () => window.print());
+  document.getElementById('audit-export-csv')?.addEventListener('click', () => exportAuditReport('csv'));
+  document.getElementById('audit-export-xlsx')?.addEventListener('click', () => exportAuditReport('xlsx'));
   document.getElementById('save-staff')?.addEventListener('click',saveStaff);
   document.getElementById('add-group')?.addEventListener('click',()=>{state.groups.push(createGroup()); renderGroups();});
 }
