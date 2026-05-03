@@ -173,3 +173,32 @@ th,td{border:1px solid #ddd;padding:.5rem}
 .btn-export:hover{background:#16884a}
 .btn-export-xlsx{background:#1b7f46}
 .btn-export-xlsx:hover{background:#146539}
+
+#report-tab-monthly .row{
+  background:linear-gradient(145deg,#f8fbff,#eef4ff);
+  border:1px solid #cfe0ff;
+  border-radius:14px;
+  padding:.85rem;
+  box-shadow:0 8px 18px rgba(41,88,170,.08);
+}
+#report-tab-monthly label{
+  color:#173b7a;
+  font-weight:800;
+  font-size:1.06rem;
+}
+#report-tab-monthly select,
+#report-tab-monthly input[type="month"]{
+  height:42px;
+  border:1px solid #9ec0f8;
+  border-radius:10px;
+  background:linear-gradient(180deg,#ffffff,#f3f8ff);
+  color:#0f2f68;
+  font-weight:700;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 2px 6px rgba(48,98,186,.08);
+}
+#report-tab-monthly select:focus,
+#report-tab-monthly input[type="month"]:focus{
+  outline:none;
+  border-color:#4f92ff;
+  box-shadow:0 0 0 3px rgba(79,146,255,.18);
+}
