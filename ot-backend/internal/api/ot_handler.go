@@ -200,6 +200,27 @@ func (h *OTHandler) DriverMonthlyReport(w http.ResponseWriter, r *http.Request) 
 	_ = json.NewEncoder(w).Encode(map[string]any{"rows": rows})
 }
 
+func (h *OTHandler) DriverAuditReport(w http.ResponseWriter, r *http.Request) {
+	setJSON(w)
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	staffID := strings.TrimSpace(r.URL.Query().Get("otstaffid"))
+	startDate := normalizeDate(strings.TrimSpace(r.URL.Query().Get("startDate")))
+	endDate := normalizeDate(strings.TrimSpace(r.URL.Query().Get("endDate")))
+	if staffID == "" || startDate == "" || endDate == "" {
+		http.Error(w, "otstaffid, startDate and endDate are required", http.StatusBadRequest)
+		return
+	}
+	detail, summary, err := h.Store.GetDriverAuditReportRows(r.Context(), staffID, startDate, endDate)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	_ = json.NewEncoder(w).Encode(map[string]any{"rows": detail, "summaryRows": summary})
+}
+
 func (h *OTHandler) DeleteEntry(w http.ResponseWriter, r *http.Request) {
 	setJSON(w)
 	if r.Method == http.MethodOptions {
