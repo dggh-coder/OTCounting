@@ -9,7 +9,7 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="logo-slot">LOGO</div>
+    <div class="logo-slot"><img src="/static/logo/logo.png" alt="Logo"></div>
     <nav class="top-links">
       <button class="top-link active" data-view="home" type="button">Home</button>
       <button class="top-link" data-view="driver" type="button">OT (Driver)</button>
@@ -75,7 +75,30 @@
           </section>
 
           <section id="report-tab-audit" class="hidden">
-            <p class="hint">Audit Report (coming soon).</p>
+            <div class="row">
+              <label>Staff
+                <select id="audit-staff"></select>
+              </label>
+              <label>Start Date
+                <input id="audit-start-date" type="text" class="js-date-picker" placeholder="YYYY-MM-DD">
+              </label>
+              <label>End Date
+                <input id="audit-end-date" type="text" class="js-date-picker" placeholder="YYYY-MM-DD">
+              </label>
+              <button id="audit-search" type="button" class="btn-primary">Search</button>
+            </div>
+            <div id="audit-msg" class="msg"></div>
+            <div class="report-context-row">
+              <div id="audit-context" class="report-context"></div>
+              <div class="report-export-actions">
+                <button id="audit-export-csv" type="button" class="btn-export">⬇ To .csv</button>
+                <button id="audit-export-xlsx" type="button" class="btn-export btn-export-xlsx">⬇ To .xlsx</button>
+              </div>
+            </div>
+            <table>
+              <thead><tr><th>Date</th><th>Start Time</th><th>End Time</th></tr></thead>
+              <tbody id="audit-body"><tr><td colspan="3">No data</td></tr></tbody>
+            </table>
           </section>
         </section>
       </section>

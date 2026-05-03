@@ -6,8 +6,10 @@ const state = {
   groups: [],
   nextGroupId: 1,
   reportRowsCount: 0,
+  auditRowsCount: 0,
   reportMonthYear: new Date().getFullYear(),
-  reportMonthValue: ""
+  reportMonthValue: "",
+  auditRows: []
 };
 
 function endpoint(path) { return API_BASE ? `${API_BASE}${path}` : path; }
@@ -80,6 +82,12 @@ function fillReportStaffOptions() {
     : '<option value="">No driver</option>';
 }
 
+function fillAuditStaffOptions() {
+  const sel = document.getElementById('audit-staff');
+  if (!sel) return;
+  sel.innerHTML = document.getElementById('report-staff')?.innerHTML || '<option value="">No driver</option>';
+}
+
 
 function monthLabel(v) {
   if (!v) return 'Select Month';
@@ -119,6 +127,20 @@ function resetMonthlyReportPage() {
   if (context) context.textContent = '';
   if (body) body.innerHTML = '<tr><td colspan="3">No data</td></tr>';
   state.reportRowsCount = 0;
+}
+
+function resetAuditReportPage() {
+  const staff = document.getElementById('audit-staff');
+  if (staff) staff.value = '';
+  const start = document.getElementById('audit-start-date');
+  const end = document.getElementById('audit-end-date');
+  if (start) start.value = '';
+  if (end) end.value = '';
+  document.getElementById('audit-msg').textContent = '';
+  document.getElementById('audit-context').textContent = '';
+  document.getElementById('audit-body').innerHTML = '<tr><td colspan="3">No data</td></tr>';
+  state.auditRowsCount = 0;
+  state.auditRows = [];
 }
 
 async function loadMonthlyReport() {
@@ -174,6 +196,64 @@ function exportMonthlyReport(kind = 'csv') {
   const staffName = staffSel?.selectedOptions?.[0]?.textContent?.split(' (')[0] || staffID;
   const suffix = kind === 'xlsx' ? 'export-xlsx' : 'export';
   const url = endpoint(`/api/ot/driver-monthly-report/${suffix}?otstaffid=${encodeURIComponent(staffID)}&yyyymm=${encodeURIComponent(yyyymm)}&staffname=${encodeURIComponent(staffName)}`);
+  window.open(url, '_blank');
+}
+
+function renderAuditRows(rows, summaryRows) {
+  const body = document.getElementById('audit-body');
+  const summaryByDate = {};
+  (summaryRows || []).forEach((r) => {
+    if (!summaryByDate[r.date]) summaryByDate[r.date] = {};
+    summaryByDate[r.date][r.period] = r;
+  });
+  let html = '';
+  rows.forEach((r) => { html += `<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td></tr>`; });
+  Object.keys(summaryByDate).sort().forEach((date) => {
+    const day = summaryByDate[date];
+    const p20 = ["00", "01", "02"].map((p) => `[<strong>${day[p]?.process20txt || ''}</strong>]`).join(' + ');
+    const p15 = ["00", "01", "02"].map((p) => `[<strong>${day[p]?.process15txt || ''}</strong>]`).join(' + ');
+    const t20 = ["00", "01", "02"].reduce((acc, p) => acc + Number(day[p]?.totalhrs20 || 0), 0);
+    const t15 = ["00", "01", "02"].reduce((acc, p) => acc + Number(day[p]?.totalhrs15 || 0), 0);
+    html += `<tr class="audit-total-row"><td colspan="3">2.0 OT: ${p20} = ${t20} hrs</td></tr>`;
+    html += `<tr class="audit-total-row"><td colspan="3">1.5 OT: ${p15} = ${t15} hrs</td></tr>`;
+  });
+  body.innerHTML = html || '<tr><td colspan="3">No data</td></tr>';
+}
+
+async function loadAuditReport() {
+  const msg = document.getElementById('audit-msg');
+  const staffSel = document.getElementById('audit-staff');
+  const staffID = staffSel?.value || '';
+  const startDate = document.getElementById('audit-start-date')?.value.trim() || '';
+  const endDate = document.getElementById('audit-end-date')?.value.trim() || '';
+  if (!staffID || !startDate || !endDate) { msg.textContent = 'Please select staff, start date and end date.'; return; }
+  if (endDate < startDate) { msg.textContent = 'End Date must be greater than or equal to Start Date.'; return; }
+  msg.textContent = '';
+  document.getElementById('audit-context').textContent = `${staffSel.selectedOptions?.[0]?.textContent || staffID} ${startDate} ~ ${endDate}`;
+  const resp = await fetch(endpoint(`/api/ot/driver-audit-report?otstaffid=${encodeURIComponent(staffID)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`), { cache: 'no-store' });
+  if (!resp.ok) { msg.textContent = await resp.text(); return; }
+  const data = await resp.json();
+  state.auditRows = data.rows || [];
+  state.auditRowsCount = state.auditRows.length;
+  renderAuditRows(state.auditRows, data.summaryRows || []);
+}
+
+function exportAuditReport(kind = 'csv') {
+  const staffSel = document.getElementById('audit-staff');
+  const staffID = staffSel?.value || '';
+  const startDate = document.getElementById('audit-start-date')?.value.trim() || '';
+  const endDate = document.getElementById('audit-end-date')?.value.trim() || '';
+  if (!staffID || !startDate || !endDate) {
+    document.getElementById('audit-msg').textContent = 'Please select staff, start date and end date before export.';
+    return;
+  }
+  if (!state.auditRowsCount) {
+    window.alert('No result for export.');
+    return;
+  }
+  const staffName = staffSel?.selectedOptions?.[0]?.textContent?.split(' (')[0] || staffID;
+  const suffix = kind === 'xlsx' ? 'export-xlsx' : 'export';
+  const url = endpoint(`/api/ot/driver-audit-report/${suffix}?otstaffid=${encodeURIComponent(staffID)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&staffname=${encodeURIComponent(staffName)}`);
   window.open(url, '_blank');
 }
 function currentYYYYMM() {
@@ -388,6 +468,7 @@ function bindEvents(){
     const tab = this.getAttribute('data-report-tab');
     switchReportTab(tab);
     if (tab === 'monthly') resetMonthlyReportPage();
+    if (tab === 'audit') resetAuditReportPage();
   }));
 
   document.getElementById('report-month-trigger')?.addEventListener('click', () => {
@@ -404,6 +485,9 @@ function bindEvents(){
   document.getElementById('report-search')?.addEventListener('click',loadMonthlyReport);
   document.getElementById('report-export-csv')?.addEventListener('click', () => exportMonthlyReport('csv'));
   document.getElementById('report-export-xlsx')?.addEventListener('click', () => exportMonthlyReport('xlsx'));
+  document.getElementById('audit-search')?.addEventListener('click', loadAuditReport);
+  document.getElementById('audit-export-csv')?.addEventListener('click', () => exportAuditReport('csv'));
+  document.getElementById('audit-export-xlsx')?.addEventListener('click', () => exportAuditReport('xlsx'));
   document.getElementById('save-staff')?.addEventListener('click',saveStaff);
   document.getElementById('add-group')?.addEventListener('click',()=>{state.groups.push(createGroup()); renderGroups();});
 }
@@ -415,8 +499,10 @@ async function reloadActiveSubPage(tabName) {
   }
   if (tabName === 'report') {
     fillReportStaffOptions();
+    fillAuditStaffOptions();
     switchReportTab('monthly');
     resetMonthlyReportPage();
+    initDatePickers(document.getElementById('report-tab-audit'));
     return;
   }
   if (tabName === 'ot') {
