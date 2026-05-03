@@ -367,7 +367,7 @@ function renderGroups() {
       <table><thead><tr><th>Type</th><th>Start (HH:MM)</th><th>End (HH:MM)</th><th></th></tr></thead><tbody class="existing-body"></tbody></table>
       <div class="section-head"><h3>New Records</h3><button class="btn-ghost" data-action="add-row" type="button">Add Row</button></div>
       <table><thead><tr><th>Type</th><th>Start (HH:MM)</th><th>End (HH:MM)</th><th></th></tr></thead><tbody class="entry-body"></tbody></table>
-      <div class="actions"><button class="btn-primary" data-action="confirm" type="button" ${g.rows.length === 0 ? "disabled" : ""}>確認 Confirm</button></div>
+      <div class="actions"><button class="btn-primary" data-action="confirm" type="button" ${g.rows.length === 0 ? "disabled" : ""}>Confirm</button></div>
       <div class="msg input-msg"></div>
     </div>`;
 
