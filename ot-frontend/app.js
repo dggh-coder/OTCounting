@@ -210,11 +210,18 @@ function renderAuditRows(rows, summaryRows) {
   const summaryByDate = {};
   (summaryRows || []).forEach((r) => {
     if (!summaryByDate[r.date]) {
+<<<<<<< codex/run-docker-compose-on-startup
+      summaryByDate[r.date] = { periods: { "00": {}, "01": {}, "02": {} }, total20: 0, total15: 0 };
+    }
+    const day = summaryByDate[r.date];
+    day.periods[r.period] = r;
+=======
       summaryByDate[r.date] = { process20: [], process15: [], total20: 0, total15: 0 };
     }
     const day = summaryByDate[r.date];
     if ((r.process20txt || '').trim()) day.process20.push(r.process20txt.trim());
     if ((r.process15txt || '').trim()) day.process15.push(r.process15txt.trim());
+>>>>>>> main
     day.total20 += Number(r.totalhrs20 || 0);
     day.total15 += Number(r.totalhrs15 || 0);
   });
@@ -226,11 +233,19 @@ function renderAuditRows(rows, summaryRows) {
       html += `<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td></tr>`;
     });
 
+<<<<<<< codex/run-docker-compose-on-startup
+    const day = summaryByDate[date] || { periods: { "00": {}, "01": {}, "02": {} }, total20: 0, total15: 0 };
+    const p20 = ["00", "01", "02"].map((p) => `[<strong>${(day.periods[p]?.process20txt || '').trim()}</strong>]`).join(' + ');
+    const p15 = ["00", "01", "02"].map((p) => `[<strong>${(day.periods[p]?.process15txt || '').trim()}</strong>]`).join(' + ');
+    html += `<tr class="audit-total-row"><td colspan="3">2.0 OT: ${p20} = ${day.total20} hrs</td></tr>`;
+    html += `<tr class="audit-total-row"><td colspan="3">1.5 OT: ${p15} = ${day.total15} hrs</td></tr>`;
+=======
     const day = summaryByDate[date] || { process20: [], process15: [], total20: 0, total15: 0 };
     const text20 = day.process20.length ? day.process20.join(' + ') : '-';
     const text15 = day.process15.length ? day.process15.join(' + ') : '-';
     html += `<tr class="audit-total-row"><td colspan="3">2.0 OT: <strong>${text20}</strong> = ${day.total20} hrs</td></tr>`;
     html += `<tr class="audit-total-row"><td colspan="3">1.5 OT: <strong>${text15}</strong> = ${day.total15} hrs</td></tr>`;
+>>>>>>> main
   });
 
   body.innerHTML = html || '<tr><td colspan="3">No data</td></tr>';
