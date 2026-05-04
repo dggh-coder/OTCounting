@@ -201,22 +201,38 @@ function exportMonthlyReport(kind = 'csv') {
 
 function renderAuditRows(rows, summaryRows) {
   const body = document.getElementById('audit-body');
+  const detailsByDate = {};
+  (rows || []).forEach((r) => {
+    if (!detailsByDate[r.date]) detailsByDate[r.date] = [];
+    detailsByDate[r.date].push(r);
+  });
+
   const summaryByDate = {};
   (summaryRows || []).forEach((r) => {
-    if (!summaryByDate[r.date]) summaryByDate[r.date] = {};
-    summaryByDate[r.date][r.period] = r;
+    if (!summaryByDate[r.date]) {
+      summaryByDate[r.date] = { process20: [], process15: [], total20: 0, total15: 0 };
+    }
+    const day = summaryByDate[r.date];
+    if ((r.process20txt || '').trim()) day.process20.push(r.process20txt.trim());
+    if ((r.process15txt || '').trim()) day.process15.push(r.process15txt.trim());
+    day.total20 += Number(r.totalhrs20 || 0);
+    day.total15 += Number(r.totalhrs15 || 0);
   });
+
+  const allDates = Array.from(new Set([...Object.keys(detailsByDate), ...Object.keys(summaryByDate)])).sort();
   let html = '';
-  rows.forEach((r) => { html += `<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td></tr>`; });
-  Object.keys(summaryByDate).sort().forEach((date) => {
-    const day = summaryByDate[date];
-    const p20 = ["00", "01", "02"].map((p) => `[<strong>${day[p]?.process20txt || ''}</strong>]`).join(' + ');
-    const p15 = ["00", "01", "02"].map((p) => `[<strong>${day[p]?.process15txt || ''}</strong>]`).join(' + ');
-    const t20 = ["00", "01", "02"].reduce((acc, p) => acc + Number(day[p]?.totalhrs20 || 0), 0);
-    const t15 = ["00", "01", "02"].reduce((acc, p) => acc + Number(day[p]?.totalhrs15 || 0), 0);
-    html += `<tr class="audit-total-row"><td colspan="3">2.0 OT: ${p20} = ${t20} hrs</td></tr>`;
-    html += `<tr class="audit-total-row"><td colspan="3">1.5 OT: ${p15} = ${t15} hrs</td></tr>`;
+  allDates.forEach((date) => {
+    (detailsByDate[date] || []).forEach((r) => {
+      html += `<tr><td>${r.date}</td><td>${r.startTime}</td><td>${r.endTime}</td></tr>`;
+    });
+
+    const day = summaryByDate[date] || { process20: [], process15: [], total20: 0, total15: 0 };
+    const text20 = day.process20.length ? day.process20.join(' + ') : '-';
+    const text15 = day.process15.length ? day.process15.join(' + ') : '-';
+    html += `<tr class="audit-total-row"><td colspan="3">2.0 OT: <strong>${text20}</strong> = ${day.total20} hrs</td></tr>`;
+    html += `<tr class="audit-total-row"><td colspan="3">1.5 OT: <strong>${text15}</strong> = ${day.total15} hrs</td></tr>`;
   });
+
   body.innerHTML = html || '<tr><td colspan="3">No data</td></tr>';
 }
 
@@ -278,15 +294,13 @@ function renderDriverSummary(rows, yyyymm, rootId, labelId, cardClassName = "") 
   rows.forEach((r) => {
     const hrs20 = Number(r.totalhrs20 || 0);
     const hrs15 = Number(r.totalhrs15 || 0);
-    const totalWeighted = hrs20 * 2 + hrs15 * 1.5;
     const card = document.createElement("article");
     card.className = `summary-card ${cardClassName}`.trim();
     card.innerHTML = `<div class="summary-head"><h3 class="summary-name">${r.displayname || r.otstaffid}</h3><span class="summary-id">ID ${r.otstaffid}</span></div>
     <div class="summary-metrics">
       <div class="metric-pill metric-pill--20"><span class="metric-label">2.0x OT</span><strong><span class="metric-value">${hrs20}</span> hrs</strong></div>
       <div class="metric-pill metric-pill--15"><span class="metric-label">1.5x OT</span><strong><span class="metric-value">${hrs15}</span> hrs</strong></div>
-    </div>
-    <div class="summary-total">Weighted Total: <strong>${totalWeighted} hrs</strong></div>`;
+    </div>`;
     root.appendChild(card);
   });
 }
