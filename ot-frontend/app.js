@@ -218,7 +218,7 @@ function renderAuditRows(rows, summaryRows) {
     day.total15 += Number(r.totalhrs15 || 0);
   });
 
-  const allDates = Array.from(new Set([...Object.keys(detailsByDate), ...Object.keys(summaryByDate)])).sort();
+  const allDates = Object.keys(detailsByDate).sort();
   let html = '';
   allDates.forEach((date) => {
     (detailsByDate[date] || []).forEach((r) => {
