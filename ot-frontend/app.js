@@ -1,5 +1,21 @@
-const API_BASE = window.__API_BASE__
-  || (window.location.port === "8080" ? "" : `${window.location.protocol}//${window.location.hostname}:8080`);
+
+async function loadWelcomeUser() {
+  const el = document.getElementById("welcome-title");
+  if (!el) return;
+  try {
+    const resp = await fetch(endpoint("/api/user"), { cache: "no-store" });
+    if (!resp.ok) {
+      el.textContent = "";
+      return;
+    }
+    const data = await resp.json();
+    const username = String(data?.user || "").trim();
+    el.textContent = username ? `Welcome ${username}` : "";
+  } catch (_) {
+    el.textContent = "";
+  }
+}
+const API_BASE = window.__API_BASE__ || "";
 
 const state = {
   staff: [],
@@ -542,5 +558,6 @@ async function reloadView(view, targetTab) {
   }
 }
 
-function init(){ state.groups=[createGroup()]; bindEvents(); loadStaff(); switchTab('ot'); switchTopView('home'); startClock(); }
+function init(){ state.groups=[createGroup()]; bindEvents(); loadStaff(); switchTab('ot'); switchTopView('home'); startClock();
+  loadWelcomeUser(); }
 document.addEventListener('DOMContentLoaded', init);
