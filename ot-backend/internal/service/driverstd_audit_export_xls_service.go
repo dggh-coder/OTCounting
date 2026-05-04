@@ -26,9 +26,9 @@ func BuildDriverAuditReportXLSX(staffName, startDate, endDate string, rows []db.
 
 	sheetRows := []string{rowXML(1, esc(fmt.Sprintf("%s %s ~ %s :", staffName, startDate, endDate))), headerRowXML(2, esc("Date"), esc("Start Time"), esc("End Time"))}
 	rowNo := 3
+	detailByDate := map[string][]db.DriverMonthlyReportRow{}
 	for _, r := range rows {
-		sheetRows = append(sheetRows, dataRowXML(rowNo, esc(r.Date), esc(r.StartTime), esc(r.EndTime)))
-		rowNo++
+		detailByDate[r.Date] = append(detailByDate[r.Date], r)
 	}
 
 	byDate := map[string]map[string]db.DriverAuditSummaryRow{}
@@ -38,12 +38,16 @@ func BuildDriverAuditReportXLSX(staffName, startDate, endDate string, rows []db.
 		}
 		byDate[s.Date][s.Period] = s
 	}
-	dates := make([]string, 0, len(byDate))
-	for d := range byDate {
+	dates := make([]string, 0, len(detailByDate))
+	for d := range detailByDate {
 		dates = append(dates, d)
 	}
 	sort.Strings(dates)
 	for _, d := range dates {
+		for _, r := range detailByDate[d] {
+			sheetRows = append(sheetRows, dataRowXML(rowNo, esc(r.Date), esc(r.StartTime), esc(r.EndTime)))
+			rowNo++
+		}
 		m := byDate[d]
 		p20 := fmt.Sprintf("[%s] + [%s] + [%s]", m["00"].Process20Txt, m["01"].Process20Txt, m["02"].Process20Txt)
 		p15 := fmt.Sprintf("[%s] + [%s] + [%s]", m["00"].Process15Txt, m["01"].Process15Txt, m["02"].Process15Txt)
