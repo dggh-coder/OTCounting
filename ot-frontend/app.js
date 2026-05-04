@@ -5,14 +5,14 @@ async function loadWelcomeUser() {
   try {
     const resp = await fetch(endpoint("/api/user"), { cache: "no-store" });
     if (!resp.ok) {
-      el.textContent = "";
+      el.textContent = "Welcome";
       return;
     }
     const data = await resp.json();
     const username = String(data?.user || "").trim();
-    el.textContent = username ? `Welcome ${username}` : "";
+    el.textContent = username ? `Welcome ${username}` : "Welcome";
   } catch (_) {
-    el.textContent = "";
+    el.textContent = "Welcome";
   }
 }
 const API_BASE = window.__API_BASE__ || "";
