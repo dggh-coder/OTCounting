@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -48,6 +49,15 @@ func main() {
 	mux.HandleFunc("/api/ot/driver-monthly-report/export-xlsx", otHandler.DriverMonthlyReportExportXLSX)
 	mux.HandleFunc("/api/staff", otHandler.Staff)
 	mux.HandleFunc("/api/staff/input", otHandler.StaffInput)
+	mux.HandleFunc("/api/user", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		user := r.Header.Get("X-Remote-User")
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]string{"user": user})
+	})
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
 
 	addr := ":8080"
