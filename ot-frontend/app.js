@@ -278,15 +278,13 @@ function renderDriverSummary(rows, yyyymm, rootId, labelId, cardClassName = "") 
   rows.forEach((r) => {
     const hrs20 = Number(r.totalhrs20 || 0);
     const hrs15 = Number(r.totalhrs15 || 0);
-    const totalWeighted = hrs20 * 2 + hrs15 * 1.5;
     const card = document.createElement("article");
     card.className = `summary-card ${cardClassName}`.trim();
     card.innerHTML = `<div class="summary-head"><h3 class="summary-name">${r.displayname || r.otstaffid}</h3><span class="summary-id">ID ${r.otstaffid}</span></div>
     <div class="summary-metrics">
       <div class="metric-pill metric-pill--20"><span class="metric-label">2.0x OT</span><strong><span class="metric-value">${hrs20}</span> hrs</strong></div>
       <div class="metric-pill metric-pill--15"><span class="metric-label">1.5x OT</span><strong><span class="metric-value">${hrs15}</span> hrs</strong></div>
-    </div>
-    <div class="summary-total">Weighted Total: <strong>${totalWeighted} hrs</strong></div>`;
+    </div>`;
     root.appendChild(card);
   });
 }
