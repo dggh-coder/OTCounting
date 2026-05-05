@@ -13,6 +13,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - ${OTOPENGAUSS_DB_PATH:-/data/otopengauss/db}:/var/lib/opengauss:Z
       - ${OTOPENGAUSS_LOG_PATH:-/data/otopengauss/log}:/var/log/opengauss:Z
       - ./deploy/opengauss-init:/docker-entrypoint-initdb.d:ro
@@ -35,6 +36,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - ./secrets/ot_db_password.txt:/run/secrets/ot_db_password:ro,Z
 
   ot-frontend:
@@ -50,4 +52,5 @@ services:
     ports:
       - "8081:8081"
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - /data/nginx/logo:/usr/share/nginx/html/static/logo:ro,Z
