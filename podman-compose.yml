@@ -8,6 +8,8 @@ services:
     env_file:
       - ./opengauss.env
       - ./.env
+    environment:
+      TZ: Asia/Hong_Kong
     ports:
       - "5432:5432"
     volumes:
@@ -25,6 +27,7 @@ services:
       - ./.env
     environment:
       DB_PASSWORD_FILE: /run/secrets/ot_db_password
+      TZ: Asia/Hong_Kong
     depends_on:
       opengauss:
         condition: service_started
@@ -38,6 +41,8 @@ services:
     build:
       context: ./ot-frontend
     container_name: ot-frontend
+    environment:
+      TZ: Asia/Hong_Kong
     depends_on:
       ot-backend:
         condition: service_started
