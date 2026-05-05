@@ -22,25 +22,18 @@ type Staff struct {
 }
 
 func (s *Store) UpsertStaff(ctx context.Context, in Staff) (Staff, error) {
-	updateTag, err := s.pool.Exec(ctx, `
-		UPDATE ot_staffinfo.staffinfo
-		SET nameeng = $2,
-		    namechi = $3,
-		    displayname = $4,
-		    domainname = $5,
-		    staffgroup = $6
-		WHERE staffid = $1
-	`, in.StaffID, in.NameEng, in.NameChi, in.DisplayName, in.DomainName, in.StaffGroup)
+	exists, err := s.StaffExists(ctx, in.StaffID)
 	if err != nil {
 		return Staff{}, err
 	}
-	if updateTag.RowsAffected() == 0 {
-		if _, err := s.pool.Exec(ctx, `
-			INSERT INTO ot_staffinfo.staffinfo (staffid, nameeng, namechi, displayname, domainname, staffgroup)
-			VALUES ($1, $2, $3, $4, $5, $6)
-		`, in.StaffID, in.NameEng, in.NameChi, in.DisplayName, in.DomainName, in.StaffGroup); err != nil {
-			return Staff{}, err
-		}
+	if exists {
+		return Staff{}, fmt.Errorf("Staff No already exists!")
+	}
+	if _, err := s.pool.Exec(ctx, `
+		INSERT INTO ot_staffinfo.staffinfo (staffid, nameeng, namechi, displayname, domainname, staffgroup)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`, in.StaffID, in.NameEng, in.NameChi, in.DisplayName, in.DomainName, in.StaffGroup); err != nil {
+		return Staff{}, err
 	}
 
 	var out Staff
@@ -52,6 +45,16 @@ func (s *Store) UpsertStaff(ctx context.Context, in Staff) (Staff, error) {
 		return Staff{}, err
 	}
 	return out, nil
+}
+
+
+func (s *Store) StaffExists(ctx context.Context, staffID string) (bool, error) {
+	var exists bool
+	err := s.pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM ot_staffinfo.staffinfo WHERE staffid = $1)`, strings.TrimSpace(staffID)).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
 }
 
 type EntryInput struct {

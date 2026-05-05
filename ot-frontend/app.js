@@ -360,13 +360,12 @@ function renderStaffList() {
 
   const table = document.createElement("table");
   table.className = "staff-table";
-  table.innerHTML = `<thead><tr><th>ID</th><th>Eng</th><th>Chi</th><th>Display</th><th>Domain</th><th>Group</th><th>Action</th></tr></thead><tbody></tbody>`;
+  table.innerHTML = `<thead><tr><th>ID</th><th>Eng</th><th>Chi</th><th>Display</th><th>Domain</th><th>Group</th></tr></thead><tbody></tbody>`;
   const tbody = table.querySelector("tbody");
 
   state.staff.forEach((s) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${s.staffid || "-"}</td><td>${s.nameeng || "-"}</td><td>${s.namechi || "-"}</td><td>${s.displayname || "-"}</td><td>${s.domainname || "-"}</td><td>${s.staffgroup || "-"}</td><td><button class="btn-danger" data-action="delete-staff" data-staffid="${s.staffid}" type="button">Delete</button></td>`;
-    tr.querySelector("[data-action='delete-staff']").addEventListener("click", async (e) => deleteStaff(e.target.dataset.staffid));
+    tr.innerHTML = `<td>${s.staffid || "-"}</td><td>${s.nameeng || "-"}</td><td>${s.namechi || "-"}</td><td>${s.displayname || "-"}</td><td>${s.domainname || "-"}</td><td>${s.staffgroup || "-"}</td>`;
     tbody.appendChild(tr);
   });
 
@@ -467,9 +466,13 @@ async function confirmInput(g,msgEl){ msgEl.textContent=''; const p=/^([01]\d|2[
 async function saveStaff(){/* unchanged simplified */
   const msg=document.getElementById('staff-msg'); msg.textContent=''; msg.style.color='#b00020';
   const staffid=document.getElementById('staff-id').value.trim(); const nameeng=document.getElementById('staff-nameeng').value.trim(); const namechi=document.getElementById('staff-namechi').value.trim(); const displayname=document.getElementById('staff-displayname').value.trim(); const domainname=document.getElementById('staff-domainname').value.trim(); const staffgroup=document.getElementById('staff-staffgroup').value.trim(); if(!staffid){msg.textContent='Staff No (ID) is required.';return;}
+  const existsResp = await fetch(endpoint(`/api/staff?staffid=${encodeURIComponent(staffid)}`), { cache: 'no-store' });
+  if(!existsResp.ok){msg.textContent=await existsResp.text();return;}
+  const existsData = await existsResp.json();
+  const exists = (existsData.staff || []).some((s)=> String(s.staffid).trim() === staffid);
+  if(exists){ msg.textContent='Staff No already exists!'; return; }
   const resp=await fetch(endpoint('/api/staff/input'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({staffid,nameeng,namechi,displayname,domainname,staffgroup})}); if(!resp.ok){msg.textContent=await resp.text();return;} ['staff-id','staff-nameeng','staff-namechi','staff-displayname','staff-domainname','staff-staffgroup'].forEach((id)=>document.getElementById(id).value=''); msg.style.color='#0a7a2f'; msg.textContent='Staff saved.'; await loadStaff();
 }
-async function deleteStaff(staffid){const msg=document.getElementById('staff-msg'); msg.textContent=''; if(!window.confirm(`Delete staff ${staffid}?`)) return; const resp=await fetch(endpoint(`/api/staff?staffid=${encodeURIComponent(staffid)}`),{method:'DELETE'}); if(!resp.ok){msg.textContent=await resp.text();return;} msg.style.color='#0a7a2f'; msg.textContent=`Staff ${staffid} deleted.`; await loadStaff();}
 
 function resetStaffInputForm() {
   ['staff-id','staff-nameeng','staff-namechi','staff-displayname','staff-domainname','staff-staffgroup']
