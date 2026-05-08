@@ -38,7 +38,7 @@ func (s *Store) UpsertStaff(ctx context.Context, in Staff) (Staff, error) {
 
 	var out Staff
 	if err := s.pool.QueryRow(ctx, `
-		SELECT staffid, nameeng, namechi, displayname, domainname, staffgroup
+		SELECT staffid, COALESCE(nameeng, ''), COALESCE(namechi, ''), COALESCE(displayname, ''), COALESCE(domainname, ''), COALESCE(staffgroup, '')
 		FROM ot_staffinfo.staffinfo
 		WHERE staffid = $1
 	`, in.StaffID).Scan(&out.StaffID, &out.NameEng, &out.NameChi, &out.DisplayName, &out.DomainName, &out.StaffGroup); err != nil {
@@ -122,7 +122,7 @@ type timeSpan struct {
 
 func (s *Store) ListStaff(ctx context.Context) ([]Staff, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT s.staffid, s.nameeng, s.namechi, s.displayname, s.domainname, s.staffgroup
+		SELECT s.staffid, COALESCE(s.nameeng, ''), COALESCE(s.namechi, ''), COALESCE(s.displayname, ''), COALESCE(s.domainname, ''), COALESCE(s.staffgroup, '')
 		FROM ot_staffinfo.staffinfo s
 		UNION
 		SELECT p.otstaffid AS staffid, '' AS nameeng, '' AS namechi, p.otstaffid AS displayname, '' AS domainname, '' AS staffgroup
