@@ -21,6 +21,19 @@ type Staff struct {
 	StaffGroup  string `json:"staffgroup"`
 }
 
+func scanStaffFields(scanner interface{ Scan(dest ...any) error }, out *Staff) error {
+	var nameEng, nameChi, displayName, domainName, staffGroup sql.NullString
+	if err := scanner.Scan(&out.StaffID, &nameEng, &nameChi, &displayName, &domainName, &staffGroup); err != nil {
+		return err
+	}
+	out.NameEng = nameEng.String
+	out.NameChi = nameChi.String
+	out.DisplayName = displayName.String
+	out.DomainName = domainName.String
+	out.StaffGroup = staffGroup.String
+	return nil
+}
+
 func (s *Store) UpsertStaff(ctx context.Context, in Staff) (Staff, error) {
 	exists, err := s.StaffExists(ctx, in.StaffID)
 	if err != nil {
@@ -37,11 +50,12 @@ func (s *Store) UpsertStaff(ctx context.Context, in Staff) (Staff, error) {
 	}
 
 	var out Staff
-	if err := s.pool.QueryRow(ctx, `
-		SELECT staffid, nameeng, namechi, displayname, domainname, staffgroup
+	row := s.pool.QueryRow(ctx, `
+		SELECT staffid, COALESCE(nameeng, ''), COALESCE(namechi, ''), COALESCE(displayname, ''), COALESCE(domainname, ''), COALESCE(staffgroup, '')
 		FROM ot_staffinfo.staffinfo
 		WHERE staffid = $1
-	`, in.StaffID).Scan(&out.StaffID, &out.NameEng, &out.NameChi, &out.DisplayName, &out.DomainName, &out.StaffGroup); err != nil {
+	`, in.StaffID)
+	if err := scanStaffFields(row, &out); err != nil {
 		return Staff{}, err
 	}
 	return out, nil
@@ -122,7 +136,12 @@ type timeSpan struct {
 
 func (s *Store) ListStaff(ctx context.Context) ([]Staff, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT s.staffid, s.nameeng, s.namechi, s.displayname, s.domainname, s.staffgroup
+		SELECT s.staffid AS staffid,
+		       COALESCE(s.nameeng, '') AS nameeng,
+		       COALESCE(s.namechi, '') AS namechi,
+		       COALESCE(s.displayname, '') AS displayname,
+		       COALESCE(s.domainname, '') AS domainname,
+		       COALESCE(s.staffgroup, '') AS staffgroup
 		FROM ot_staffinfo.staffinfo s
 		UNION
 		SELECT p.otstaffid AS staffid, '' AS nameeng, '' AS namechi, p.otstaffid AS displayname, '' AS domainname, '' AS staffgroup
@@ -138,7 +157,7 @@ func (s *Store) ListStaff(ctx context.Context) ([]Staff, error) {
 	out := []Staff{}
 	for rows.Next() {
 		var r Staff
-		if err := rows.Scan(&r.StaffID, &r.NameEng, &r.NameChi, &r.DisplayName, &r.DomainName, &r.StaffGroup); err != nil {
+		if err := scanStaffFields(rows, &r); err != nil {
 			return nil, err
 		}
 		out = append(out, r)
