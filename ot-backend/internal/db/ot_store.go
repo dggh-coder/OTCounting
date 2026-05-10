@@ -378,7 +378,7 @@ func (s *Store) GetDriverMonthlySummary(ctx context.Context, yyyymm string) ([]D
 func (s *Store) GetDriverMonthlyReportRows(ctx context.Context, staffID, yyyymm string) ([]DriverMonthlyReportRow, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT TO_CHAR(p.date, 'YYYY-MM-DD') AS date_label,
-		       COALESCE(p.remarks, '') AS remarks,
+		       p.remarks AS remarks,
 		       d.starttime::text AS start_time,
 		       d.endtime::text AS end_time
 		FROM ot_driverstd.otperiod p
@@ -394,8 +394,12 @@ func (s *Store) GetDriverMonthlyReportRows(ctx context.Context, staffID, yyyymm 
 	out := []DriverMonthlyReportRow{}
 	for rows.Next() {
 		var r DriverMonthlyReportRow
-		if err := rows.Scan(&r.Date, &r.Remarks, &r.StartTime, &r.EndTime); err != nil {
+		var remarks sql.NullString
+		if err := rows.Scan(&r.Date, &remarks, &r.StartTime, &r.EndTime); err != nil {
 			return nil, err
+		}
+		if remarks.Valid {
+			r.Remarks = remarks.String
 		}
 		out = append(out, r)
 	}
@@ -404,7 +408,7 @@ func (s *Store) GetDriverMonthlyReportRows(ctx context.Context, staffID, yyyymm 
 
 func (s *Store) GetDriverAuditReportRows(ctx context.Context, staffID, startDate, endDate string) ([]DriverMonthlyReportRow, []DriverAuditSummaryRow, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT TO_CHAR(p.date, 'YYYY-MM-DD') AS date_label, COALESCE(p.remarks, '') AS remarks, d.starttime::text, d.endtime::text
+		SELECT TO_CHAR(p.date, 'YYYY-MM-DD') AS date_label, p.remarks AS remarks, d.starttime::text, d.endtime::text
 		FROM ot_driverstd.otperiod p
 		JOIN ot_driverstd.otdetails d ON d.otid = p.id
 		WHERE BTRIM(p.otstaffid)=BTRIM($1) AND p.date BETWEEN $2::date AND $3::date
@@ -417,8 +421,12 @@ func (s *Store) GetDriverAuditReportRows(ctx context.Context, staffID, startDate
 	detail := []DriverMonthlyReportRow{}
 	for rows.Next() {
 		var r DriverMonthlyReportRow
-		if err := rows.Scan(&r.Date, &r.Remarks, &r.StartTime, &r.EndTime); err != nil {
+		var remarks sql.NullString
+		if err := rows.Scan(&r.Date, &remarks, &r.StartTime, &r.EndTime); err != nil {
 			return nil, nil, err
+		}
+		if remarks.Valid {
+			r.Remarks = remarks.String
 		}
 		detail = append(detail, r)
 	}
