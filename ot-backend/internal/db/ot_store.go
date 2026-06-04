@@ -61,7 +61,6 @@ func (s *Store) UpsertStaff(ctx context.Context, in Staff) (Staff, error) {
 	return out, nil
 }
 
-
 func (s *Store) StaffExists(ctx context.Context, staffID string) (bool, error) {
 	var exists bool
 	err := s.pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM ot_staffinfo.staffinfo WHERE staffid = $1)`, strings.TrimSpace(staffID)).Scan(&exists)
@@ -518,42 +517,13 @@ func (s *Store) rebuildPeriodResultTx(ctx context.Context, tx pgx.Tx, periodID i
 	otRanges = mergeTimeSpans(otRanges)
 	breakRanges = mergeTimeSpans(breakRanges)
 
-	rate15Parts := []string{}
-	rate20Parts := []string{}
-	rate15Mins := 0
-	rate20Mins := 0
-
-	for _, ot := range otRanges {
-		segments := []timeSpan{ot}
-		for _, br := range breakRanges {
-			segments = subtractTmRange(segments, br)
-		}
-		for _, seg := range segments {
-			if !seg.end.After(seg.start) {
-				continue
-			}
-			cur := seg.start
-			for cur.Before(seg.end) {
-				next := cur.Add(time.Minute)
-				rate := classifyRate(cur)
-				if rate == 15 {
-					rate15Mins++
-				} else if rate == 20 {
-					rate20Mins++
-				}
-				cur = next
-			}
-			r15Segs, r20Segs := splitSegmentsByRate(seg)
-			rate15Parts = append(rate15Parts, r15Segs...)
-			rate20Parts = append(rate20Parts, r20Segs...)
-		}
-	}
+	result := selectPeriodCalculator(date).Calculate(otRanges, breakRanges)
 
 	id := makePeriodResultID(date, period)
-	hours20, mins20 := minsToHM(rate20Mins)
-	hours15, mins15 := minsToHM(rate15Mins)
-	process20 := formatProcessText(rate20Parts, hours20, mins20)
-	process15 := formatProcessText(rate15Parts, hours15, mins15)
+	hours20, mins20 := minsToHM(result.rate20Mins)
+	hours15, mins15 := minsToHM(result.rate15Mins)
+	process20 := formatProcessText(result.rate20Parts, hours20, mins20)
+	process15 := formatProcessText(result.rate15Parts, hours15, mins15)
 	total20, total15 := mixedRoundHours(hours20, mins20, hours15, mins15)
 	updateTag, err := tx.Exec(ctx, `
 		UPDATE ot_driverstd.periodresult
@@ -728,7 +698,7 @@ func minsToHM(total int) (int, int) { return total / 60, total % 60 }
 
 func formatProcessText(parts []string, h, m int) string {
 	if len(parts) == 0 {
-		return ""
+		return fmt.Sprintf("%dH,%dM", h, m)
 	}
 	return strings.Join(parts, " + ") + fmt.Sprintf(" = %dH,%dM", h, m)
 }
