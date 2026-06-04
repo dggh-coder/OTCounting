@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"strings"
 	"time"
 )
@@ -89,7 +90,7 @@ func FridayCalculatePeriodResult(otRanges, breakRanges []timeSpan) periodCalcula
 			cur := seg.start
 			for cur.Before(seg.end) {
 				next := cur.Add(time.Minute)
-				rate := classifyRate(cur)
+				rate := classifyFridayRate(cur)
 				if rate == 15 {
 					out.rate15Mins++
 				} else if rate == 20 {
@@ -97,11 +98,54 @@ func FridayCalculatePeriodResult(otRanges, breakRanges []timeSpan) periodCalcula
 				}
 				cur = next
 			}
-			r15Segs, r20Segs := splitSegmentsByRate(seg)
+			r15Segs, r20Segs := splitFridaySegmentsByRate(seg)
 			out.rate15Parts = append(out.rate15Parts, r15Segs...)
 			out.rate20Parts = append(out.rate20Parts, r20Segs...)
 		}
 	}
 
 	return out
+}
+
+func splitFridaySegmentsByRate(seg timeSpan) ([]string, []string) {
+	r15 := []string{}
+	r20 := []string{}
+	if !seg.end.After(seg.start) {
+		return r15, r20
+	}
+	curStart := seg.start
+	curRate := classifyFridayRate(seg.start)
+	for cur := seg.start.Add(time.Minute); !cur.After(seg.end); cur = cur.Add(time.Minute) {
+		if cur.Equal(seg.end) || classifyFridayRate(cur) != curRate {
+			part := fmt.Sprintf("(%s-%s)", curStart.Format("15:04"), cur.Format("15:04"))
+			if curRate == 15 {
+				r15 = append(r15, part)
+			} else if curRate == 20 {
+				r20 = append(r20, part)
+			}
+			curStart = cur
+			if !cur.Equal(seg.end) {
+				curRate = classifyFridayRate(cur)
+			}
+		}
+	}
+	return r15, r20
+}
+
+func classifyFridayRate(t time.Time) int {
+	mins := t.Hour()*60 + t.Minute()
+	switch {
+	case mins >= 7*60 && mins < 8*60+45:
+		return 15
+	case mins >= 13*60 && mins < 14*60:
+		return 15
+	case mins >= 17*60+45 && mins < 20*60:
+		return 15
+	case mins >= 8*60+45 && mins < 13*60:
+		return 0
+	case mins >= 14*60 && mins < 17*60+45:
+		return 0
+	default:
+		return 20
+	}
 }

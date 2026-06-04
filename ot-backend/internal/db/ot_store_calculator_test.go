@@ -26,27 +26,41 @@ func TestSelectPeriodCalculatorByInputDate(t *testing.T) {
 	}
 }
 
-func TestFridayCalMatchesOtherDayCalCurrentRules(t *testing.T) {
-	otOne, err := parseDateRange("2026-06-05", "17:45", "19:00")
+func TestFridayCalUsesFridayEveningStart(t *testing.T) {
+	ot, err := parseDateRange("2026-06-05", "17:45", "18:15")
 	if err != nil {
-		t.Fatalf("parse first ot range: %v", err)
-	}
-	otTwo, err := parseDateRange("2026-06-05", "20:00", "21:30")
-	if err != nil {
-		t.Fatalf("parse second ot range: %v", err)
+		t.Fatalf("parse ot range: %v", err)
 	}
 
-	friday := FridayCal{}.Calculate([]timeSpan{otOne, otTwo}, nil)
-	fridayDirect := FridayCalculatePeriodResult([]timeSpan{otOne, otTwo}, nil)
-	otherDay := OtherDayCal{}.Calculate([]timeSpan{otOne, otTwo}, nil)
+	friday := FridayCal{}.Calculate([]timeSpan{ot}, nil)
+	fridayDirect := FridayCalculatePeriodResult([]timeSpan{ot}, nil)
+	otherDay := OtherDayCal{}.Calculate([]timeSpan{ot}, nil)
 
 	if !reflect.DeepEqual(friday, fridayDirect) {
 		t.Fatalf("FridayCal differs from FridayCalculatePeriodResult: friday=%+v direct=%+v", friday, fridayDirect)
 	}
-	if !reflect.DeepEqual(friday, otherDay) {
-		t.Fatalf("FridayCal differs from OtherDayCal: friday=%+v otherDay=%+v", friday, otherDay)
+	if friday.rate15Mins != 30 || friday.rate20Mins != 0 {
+		t.Fatalf("FridayCal got 1.5=%d 2.0=%d, want 1.5=30 2.0=0", friday.rate15Mins, friday.rate20Mins)
 	}
-	if friday.rate15Mins != 45 || friday.rate20Mins != 90 {
-		t.Fatalf("unexpected minutes: got 1.5=%d 2.0=%d, want 1.5=45 2.0=90", friday.rate15Mins, friday.rate20Mins)
+	if !reflect.DeepEqual(friday.rate15Parts, []string{"(17:45-18:15)"}) {
+		t.Fatalf("FridayCal rate15Parts=%v, want [(17:45-18:15)]", friday.rate15Parts)
+	}
+	if otherDay.rate15Mins != 0 || otherDay.rate20Mins != 0 {
+		t.Fatalf("OtherDayCal got 1.5=%d 2.0=%d, want 1.5=0 2.0=0", otherDay.rate15Mins, otherDay.rate20Mins)
+	}
+}
+
+func TestFridayCalKeepsEveningRate15Through2000(t *testing.T) {
+	ot, err := parseDateRange("2026-06-05", "17:45", "20:00")
+	if err != nil {
+		t.Fatalf("parse ot range: %v", err)
+	}
+
+	friday := FridayCal{}.Calculate([]timeSpan{ot}, nil)
+	if friday.rate15Mins != 135 || friday.rate20Mins != 0 {
+		t.Fatalf("FridayCal got 1.5=%d 2.0=%d, want 1.5=135 2.0=0", friday.rate15Mins, friday.rate20Mins)
+	}
+	if !reflect.DeepEqual(friday.rate15Parts, []string{"(17:45-20:00)"}) {
+		t.Fatalf("FridayCal rate15Parts=%v, want [(17:45-20:00)]", friday.rate15Parts)
 	}
 }
