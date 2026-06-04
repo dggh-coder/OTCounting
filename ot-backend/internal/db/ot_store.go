@@ -698,7 +698,7 @@ func minsToHM(total int) (int, int) { return total / 60, total % 60 }
 
 func formatProcessText(parts []string, h, m int) string {
 	if len(parts) == 0 {
-		return ""
+		return fmt.Sprintf("%dH,%dM", h, m)
 	}
 	return strings.Join(parts, " + ") + fmt.Sprintf(" = %dH,%dM", h, m)
 }
