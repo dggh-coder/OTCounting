@@ -37,8 +37,12 @@ func TestFridayCalMatchesOtherDayCalCurrentRules(t *testing.T) {
 	}
 
 	friday := FridayCal{}.Calculate([]timeSpan{otOne, otTwo}, nil)
+	fridayDirect := FridayCalculatePeriodResult([]timeSpan{otOne, otTwo}, nil)
 	otherDay := OtherDayCal{}.Calculate([]timeSpan{otOne, otTwo}, nil)
 
+	if !reflect.DeepEqual(friday, fridayDirect) {
+		t.Fatalf("FridayCal differs from FridayCalculatePeriodResult: friday=%+v direct=%+v", friday, fridayDirect)
+	}
 	if !reflect.DeepEqual(friday, otherDay) {
 		t.Fatalf("FridayCal differs from OtherDayCal: friday=%+v otherDay=%+v", friday, otherDay)
 	}
